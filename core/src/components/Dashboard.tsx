@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GithubUser, GithubRepo, IGitService, ServiceType, AppSettings, ProjectType } from '../types';
-import { SETTINGS_SCHEMA, DEFAULT_SETTINGS, useNavigation, ViewType } from '../features';
+import { SETTINGS_SCHEMA, DEFAULT_SETTINGS, useNavigation, ViewType, useAppStore, useSettingsStore } from '../features';
 import PostList from './PostList';
 import CreatePostWrapper from './CreatePostWrapper';
 import ImageList from './ImageList';
@@ -35,28 +35,13 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceType, onLogout, onResetAndLogout }) => {
-    const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+    // Use Zustand stores for global state
+    const { activeView, setView, isSidebarOpen, setSidebarOpen, toggleSidebar, isScanning, setScanning, repoStats, setRepoStats } = useAppStore();
+    const { settings, setSettings, isSaving, setIsSaving, saveSuccess, setSaveSuccess, isSetupComplete, setSetupComplete } = useSettingsStore();
 
-    const [activeView, setActiveView] = useState(() => {
-        if (typeof window !== 'undefined') {
-            const params = new URLSearchParams(window.location.search);
-            const view = params.get('view');
-            const validViews = ['dashboard', 'workflows', 'images', 'template', 'backup', 'settings'];
-            return view && validViews.includes(view) ? view : 'dashboard';
-        }
-        return 'dashboard';
-    });
-
-    const [isSetupComplete, setIsSetupComplete] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [saveSuccess, setSaveSuccess] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isPickerOpen, setIsPickerOpen] = useState<'posts' | 'images' | null>(null);
     const importFileInputRef = useRef<HTMLInputElement>(null);
     const [importExportStatus, setImportExportStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-
-    const [repoStats, setRepoStats] = useState<{ postCount: number | null, imageCount: number | null }>({ postCount: null, imageCount: null });
-    const [isScanning, setIsScanning] = useState(true);
 
     const [suggestedPostPaths, setSuggestedPostPaths] = useState<string[]>([]);
     const [suggestedImagePaths, setSuggestedImagePaths] = useState<string[]>([]);
@@ -65,40 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
     const [currentRepo, setCurrentRepo] = useState<GithubRepo>(repo);
     const [lastWriteTime, setLastWriteTime] = useState<number | null>(null);
     const [isSynced, setIsSynced] = useState(true);
-
-    // Sync state to URL
-    useEffect(() => {
-        if (window.location.protocol === 'blob:') return;
-        try {
-            const url = new URL(window.location.href);
-            const currentViewInUrl = url.searchParams.get('view');
-            if (currentViewInUrl !== activeView) {
-                url.searchParams.set('view', activeView);
-                if (!currentViewInUrl) {
-                    window.history.replaceState({}, '', url.toString());
-                } else {
-                    window.history.pushState({}, '', url.toString());
-                }
-            }
-        } catch (e) {
-            console.warn("URL Sync disabled due to environment restrictions.");
-        }
-    }, [activeView]);
-
-    // Handle browser back/forward buttons
-    useEffect(() => {
-        const handlePopState = () => {
-            const params = new URLSearchParams(window.location.search);
-            const view = params.get('view');
-            if (view) {
-                setActiveView(view);
-            } else {
-                setActiveView('dashboard');
-            }
-        };
-        window.addEventListener('popstate', handlePopState);
-        return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
+    // URL sync is now handled by useAppStore
 
     const fetchStats = useCallback(async () => {
         setRepoStats({ postCount: null, imageCount: null });
@@ -145,7 +97,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
 
     useEffect(() => {
         const loadSettingsAndScan = async () => {
-            setIsScanning(true);
+            setScanning(true);
             const projectTypeKey = `projectType_${repo.full_name}`;
             const postsPathKey = `postsPath_${repo.full_name}`;
             const imagesPathKey = `imagesPath_${repo.full_name}`;
@@ -188,8 +140,8 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
             setSettings(prev => ({ ...prev, ...loadedSettings }));
 
             if (savedProjectType && savedPostsPath && savedImagesPath) {
-                setIsSetupComplete(true);
-                setIsScanning(false);
+                setSetupComplete(true);
+                setScanning(false);
             } else {
                 try {
                     const configContent = await gitService.getFileContent('.pageelrc.json');
@@ -239,8 +191,8 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                             localStorage.setItem(`postTableColumnWidths_${prefix}`, JSON.stringify(config.ui.columnWidths));
                         }
 
-                        setIsSetupComplete(true);
-                        setIsScanning(false);
+                        setSetupComplete(true);
+                        setScanning(false);
                         return;
                     }
                 } catch (e) {
@@ -264,7 +216,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                 if (imageDirs.length > 0) {
                     setSettings(prev => ({ ...prev, imagesPath: imageDirs[0] }));
                 }
-                setIsScanning(false);
+                setScanning(false);
             }
         };
 
@@ -476,7 +428,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
             } catch (e) {
                 console.warn("Failed to create .pageelrc.json or it already exists", e);
             }
-            setIsSetupComplete(true);
+            setSetupComplete(true);
         }
     }
 
@@ -519,8 +471,8 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
     ];
 
     const handleMobileNavClick = (view: string) => {
-        setActiveView(view);
-        setIsSidebarOpen(false);
+        setView(view as ViewType);
+        setSidebarOpen(false);
     };
 
     if (isScanning) {
@@ -598,7 +550,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                         repo={currentRepo}
                         settings={settings}
                         onComplete={() => {
-                            setActiveView('dashboard');
+                            setView('dashboard');
                         }}
                         onAction={handleAction}
                     />
@@ -652,7 +604,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
         <div className="flex h-screen bg-white font-sans overflow-hidden text-notion-text">
             {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden" onClick={() => setIsSidebarOpen(false)}></div>
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden" onClick={() => setSidebarOpen(false)}></div>
             )}
 
             {/* Sidebar */}
@@ -686,7 +638,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                 {/* Mobile Header with Breadcrumb */}
                 <div className="lg:hidden flex items-center justify-between bg-white border-b border-notion-border p-4">
                     <div className="flex items-center overflow-hidden">
-                        <button onClick={() => setIsSidebarOpen(true)} className="p-1 -ml-1 rounded-sm text-gray-500 hover:bg-gray-100 focus:outline-none flex-shrink-0 mr-2">
+                        <button onClick={() => setSidebarOpen(true)} className="p-1 -ml-1 rounded-sm text-gray-500 hover:bg-gray-100 focus:outline-none flex-shrink-0 mr-2">
                             <MenuIcon className="h-6 w-6" />
                         </button>
                         <div className="flex items-center text-sm overflow-hidden whitespace-nowrap leading-none">
