@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New browser tab requiring re-login
 - Template columns not syncing with PostList table
 - Stale state in Dashboard save handlers
+- Template settings not persisting to `.pageelrc.json` (BUG-05)
 
 ---
 

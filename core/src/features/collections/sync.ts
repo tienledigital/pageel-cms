@@ -18,6 +18,8 @@ export interface PageelrcConfig {
     postsPath: string;
     imagesPath: string;
     template?: object;
+    tableColumns?: string[];
+    columnWidths?: Record<string, number>;
   }[];
   activeCollectionId?: string;
   settings: {
@@ -57,6 +59,8 @@ export async function loadCollectionsFromPageelrc(
         postsPath: c.postsPath,
         imagesPath: c.imagesPath,
         template: c.template,
+        tableColumns: c.tableColumns,
+        columnWidths: c.columnWidths,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }));
@@ -137,6 +141,8 @@ export async function saveCollectionsToPageelrc(
         postsPath: c.postsPath,
         imagesPath: c.imagesPath,
         template: c.template,
+        tableColumns: c.tableColumns,
+        columnWidths: c.columnWidths,
       })),
       activeCollectionId: workspace.activeCollectionId || undefined,
       settings: {
