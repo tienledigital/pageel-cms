@@ -127,26 +127,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                              />
                         </SettingRow>
                     )}
-
-                    <SettingRow label={t('dashboard.settings.directories.postsLabel')}>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center px-2 py-1 bg-notion-sidebar border border-notion-border rounded-sm text-xs text-notion-text max-w-[200px] truncate" title={settings.postsPath}>
-                                <FolderIcon className="w-3 h-3 mr-1.5 text-notion-muted flex-shrink-0" />
-                                {settings.postsPath || t('dashboard.settings.directories.notSelected')}
-                            </div>
-                            <button onClick={() => onOpenPicker('posts')} className="text-xs text-notion-muted hover:text-notion-text underline">{t('dashboard.settings.directories.changeButton')}</button>
-                        </div>
-                    </SettingRow>
-
-                    <SettingRow label={t('dashboard.settings.directories.imagesLabel')}>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center px-2 py-1 bg-notion-sidebar border border-notion-border rounded-sm text-xs text-notion-text max-w-[200px] truncate" title={settings.imagesPath}>
-                                <ImageIcon className="w-3 h-3 mr-1.5 text-notion-muted flex-shrink-0" />
-                                {settings.imagesPath || t('dashboard.settings.directories.notSelected')}
-                            </div>
-                            <button onClick={() => onOpenPicker('images')} className="text-xs text-notion-muted hover:text-notion-text underline">{t('dashboard.settings.directories.changeButton')}</button>
-                        </div>
-                    </SettingRow>
                 </div>
 
                 {/* --- Workflow Config --- */}

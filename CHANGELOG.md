@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stale state in Dashboard save handlers
 - Template settings not persisting to `.pageelrc.json` (BUG-05)
 - Config sync using localStorage fallbacks instead of collection store (BUG-06)
+- Production Domain not prioritized from `.pageelrc.json` (BUG-07)
+- Removed redundant Posts/Images Directory from Settings (BUG-08)
 
 ---
 

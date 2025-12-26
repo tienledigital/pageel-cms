@@ -240,12 +240,14 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                 }
 
                 const [foundUrl, contentDirs, imageDirs] = await Promise.all([
-                    gitService.findProductionUrl(),
+                    // BUG-07 fix: Only scan for production URL if not already set from config
+                    settings.domainUrl ? Promise.resolve(null) : gitService.findProductionUrl(),
                     gitService.scanForContentDirectories(),
                     gitService.scanForImageDirectories(),
                 ]);
 
-                if (foundUrl) {
+                // Only apply scanned URL if we don't already have one from config
+                if (foundUrl && !settings.domainUrl) {
                     setSettings(prev => ({ ...prev, domainUrl: foundUrl }));
                 }
                 setSuggestedPostPaths(contentDirs);
