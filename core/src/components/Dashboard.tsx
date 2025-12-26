@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GithubUser, GithubRepo, IGitService, ServiceType, AppSettings, ProjectType } from '../types';
+import { SETTINGS_SCHEMA, DEFAULT_SETTINGS, useNavigation, ViewType } from '../features';
 import PostList from './PostList';
 import CreatePostWrapper from './CreatePostWrapper';
 import ImageList from './ImageList';
@@ -33,42 +34,8 @@ interface DashboardProps {
     onResetAndLogout: () => void;
 }
 
-const SETTINGS_SCHEMA: { [key: string]: (v: any) => boolean } = {
-    projectType: (v) => ['astro', 'github'].includes(v),
-    postsPath: (v) => typeof v === 'string',
-    imagesPath: (v) => typeof v === 'string',
-    domainUrl: (v) => typeof v === 'string',
-    postTemplate: (v) => typeof v === 'string',
-    postFileTypes: (v) => typeof v === 'string' && v.length < 100,
-    imageFileTypes: (v) => typeof v === 'string' && v.length < 100,
-    publishDateSource: (v) => ['file', 'system'].includes(v),
-    imageCompressionEnabled: (v) => typeof v === 'boolean',
-    maxImageSize: (v) => typeof v === 'number' && v >= 10 && v <= 1024,
-    imageResizeMaxWidth: (v) => typeof v === 'number' && v >= 0 && v <= 10000,
-    newPostCommit: (v) => typeof v === 'string' && v.length < 200,
-    updatePostCommit: (v) => typeof v === 'string' && v.length < 200,
-    newImageCommit: (v) => typeof v === 'string' && v.length < 200,
-    updateImageCommit: (v) => typeof v === 'string' && v.length < 200,
-    'pageel-core-lang': (v) => ['en', 'vi'].includes(v),
-};
-
 const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceType, onLogout, onResetAndLogout }) => {
-    const [settings, setSettings] = useState<AppSettings>({
-        projectType: 'astro',
-        postsPath: '',
-        imagesPath: 'public/images',
-        domainUrl: '',
-        postFileTypes: '.md,.mdx',
-        imageFileTypes: 'image/*',
-        publishDateSource: 'file',
-        imageCompressionEnabled: false,
-        maxImageSize: 500,
-        imageResizeMaxWidth: 1024,
-        newPostCommit: 'feat(content): add post "{filename}"',
-        updatePostCommit: 'fix(content): update post "{filename}"',
-        newImageCommit: 'feat(assets): add image "{filename}"',
-        updateImageCommit: 'refactor(assets): update image for "{filename}"',
-    });
+    const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
 
     const [activeView, setActiveView] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -225,7 +192,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                 setIsScanning(false);
             } else {
                 try {
-                    const configContent = await gitService.getFileContent('.acmrc.json');
+                    const configContent = await gitService.getFileContent('.pageelrc.json');
                     const config = JSON.parse(configContent);
                     if (config) {
                         const newSettings = { ...settings };
@@ -277,7 +244,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                         return;
                     }
                 } catch (e) {
-                    console.log("No valid .acmrc.json found or failed to parse, proceeding to scan.");
+                    console.log("No valid .pageelrc.json found or failed to parse, proceeding to scan.");
                 }
 
                 const [foundUrl, contentDirs, imageDirs] = await Promise.all([
@@ -327,7 +294,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
             });
 
             try {
-                const sha = await (gitService as any).getFileSha('.acmrc.json');
+                const sha = await (gitService as any).getFileSha('.pageelrc.json');
                 if (sha) {
                     const templateKey = `postTemplate_${repo.full_name}`;
                     const columnsKey = `postTableColumns_${repo.full_name}`;
@@ -361,11 +328,11 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                             updateImage: settings.updateImageCommit
                         }
                     };
-                    await gitService.updateFileContent('.acmrc.json', JSON.stringify(configObject, null, 2), 'chore: update pageel-core config', sha);
+                    await gitService.updateFileContent('.pageelrc.json', JSON.stringify(configObject, null, 2), 'chore: update pageel-core config', sha);
                     handleAction();
                 }
             } catch (e) {
-                console.warn("Could not update .acmrc.json", e);
+                console.warn("Could not update .pageelrc.json", e);
             }
 
             setSaveSuccess(true);
@@ -504,10 +471,10 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                     }
                 };
 
-                await gitService.createFileFromString('.acmrc.json', JSON.stringify(configObject, null, 2), 'chore: add pageel-core config');
+                await gitService.createFileFromString('.pageelrc.json', JSON.stringify(configObject, null, 2), 'chore: add pageel-core config');
                 handleAction();
             } catch (e) {
-                console.warn("Failed to create .acmrc.json or it already exists", e);
+                console.warn("Failed to create .pageelrc.json or it already exists", e);
             }
             setIsSetupComplete(true);
         }
@@ -516,9 +483,9 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
     const handleDeleteConfig = async () => {
         setIsSaving(true);
         try {
-            const sha = await (gitService as any).getFileSha('.acmrc.json');
+            const sha = await (gitService as any).getFileSha('.pageelrc.json');
             if (sha) {
-                await gitService.deleteFile('.acmrc.json', sha, 'chore: delete pageel-core config');
+                await gitService.deleteFile('.pageelrc.json', sha, 'chore: delete pageel-core config');
             }
             const prefix = repo.full_name;
             const repoSpecificKeys = [
@@ -536,7 +503,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
             window.location.reload();
         } catch (e) {
             console.error("Failed to delete config:", e);
-            alert("Failed to delete .acmrc.json. Please try again.");
+            alert("Failed to delete .pageelrc.json. Please try again.");
         } finally {
             setIsSaving(false);
         }

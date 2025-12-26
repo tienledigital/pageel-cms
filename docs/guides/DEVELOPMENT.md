@@ -6,12 +6,12 @@ A comprehensive guide for setting up and developing Pageel Core.
 
 ## Prerequisites
 
-| Requirement | Version |
-|:------------|:--------|
-| Node.js | 20.19+ or 22.12+ |
-| npm | 10+ |
-| Git | Latest |
-| Browser | Chrome/Firefox/Safari with ES2020+ support |
+| Requirement | Version                                    |
+| :---------- | :----------------------------------------- |
+| Node.js     | 20.19+ or 22.12+                           |
+| npm         | 10+                                        |
+| Git         | Latest                                     |
+| Browser     | Chrome/Firefox/Safari with ES2020+ support |
 
 ---
 
@@ -74,11 +74,11 @@ App will run at [http://localhost:3000](http://localhost:3000)
 
 ## Available Scripts
 
-| Command | Description |
-|:--------|:------------|
-| `npm run dev` | Start Vite dev server (port 3000) |
-| `npm run build` | Build production bundle |
-| `npm run preview` | Preview production build |
+| Command           | Description                       |
+| :---------------- | :-------------------------------- |
+| `npm run dev`     | Start Vite dev server (port 3000) |
+| `npm run build`   | Build production bundle           |
+| `npm run preview` | Preview production build          |
 
 ---
 
@@ -98,6 +98,7 @@ cd pageel-core
 ```
 
 The script will:
+
 1. Verify repository
 2. Check for uncommitted changes
 3. Build project
@@ -105,27 +106,25 @@ The script will:
 5. Create commit and tag
 6. Push to GitHub
 
-
-
 ## Technology Stack
 
-| Category | Technology |
-|:---------|:-----------|
-| **Framework** | React 19 |
-| **Language** | TypeScript 5.9+ |
-| **Build Tool** | Vite 7+ |
-| **Styling** | Tailwind CSS (CDN) |
-| **Icons** | Custom SVG components |
-| **Fonts** | Inter (Google Fonts) |
+| Category       | Technology            |
+| :------------- | :-------------------- |
+| **Framework**  | React 19              |
+| **Language**   | TypeScript 5.9+       |
+| **Build Tool** | Vite 7+               |
+| **Styling**    | Tailwind CSS (CDN)    |
+| **Icons**      | Custom SVG components |
+| **Fonts**      | Inter (Google Fonts)  |
 
 ### CDN Dependencies
 
-| Library | Purpose |
-|:--------|:--------|
-| `marked` | Markdown parsing |
-| `DOMPurify` | HTML sanitization |
-| `JSZip` | Archive generation |
-| `js-yaml` | YAML parsing |
+| Library     | Purpose            |
+| :---------- | :----------------- |
+| `marked`    | Markdown parsing   |
+| `DOMPurify` | HTML sanitization  |
+| `JSZip`     | Archive generation |
+| `js-yaml`   | YAML parsing       |
 
 ---
 
@@ -145,6 +144,7 @@ interface IGitService {
 ```
 
 Implementations:
+
 - `GithubAdapter` - GitHub REST API
 - `GiteaAdapter` - Gitea API
 - `GogsAdapter` - Gogs API
@@ -157,12 +157,12 @@ Implementations:
 
 ### State Management
 
-| Location | Data |
-|:---------|:-----|
-| sessionStorage | Encrypted PAT, repo info |
-| localStorage | Settings (per-repo) |
-| URL Query | Active view state |
-| `.acmrc.json` | Remote config |
+| Location         | Data                     |
+| :--------------- | :----------------------- |
+| sessionStorage   | Encrypted PAT, repo info |
+| localStorage     | Settings (per-repo)      |
+| URL Query        | Active view state        |
+| `.pageelrc.json` | Remote config            |
 
 ---
 
@@ -177,17 +177,18 @@ Implementations:
 
 ### Common Issues
 
-| Issue | Solution |
-|:------|:---------|
+| Issue       | Solution                                |
+| :---------- | :-------------------------------------- |
 | Token error | Regenerate PAT with correct permissions |
-| CORS error | Check Git instance CORS settings |
-| Build error | Run `npm install` again |
+| CORS error  | Check Git instance CORS settings        |
+| Build error | Run `npm install` again                 |
 
 ---
 
 ## Testing Workflow
 
 1. **Manual Testing:**
+
    - Connect to test repository
    - Create/edit/delete posts
    - Upload/manage images

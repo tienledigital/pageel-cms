@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- **BREAKING:** Renamed config file `.acmrc.json` → `.pageelrc.json`
+- Refactored to feature-based folder structure (`src/features/`)
+- Dashboard now uses shared `SETTINGS_SCHEMA` and `DEFAULT_SETTINGS`
+
+### Added
+
+- `IAuthProvider` interface for Pro extensibility (database/OAuth auth)
+- `ISettingsProvider` interface for swappable settings storage
+- `useNavigation` hook for view routing with browser history
+
+---
+
 ## [1.0.0] - 2025-12-11
 
 ### 🎉 Initial Release
@@ -16,31 +32,36 @@ First public release of Pageel Core - a Git-based CMS for static & hybrid websit
 #### Features
 
 - **Posts Management**
+
   - Table and grid view modes
   - Inline frontmatter editing
   - Split-pane Markdown editor with live preview
   - SHA validation for file integrity
 
 - **Media Management**
+
   - Gallery view with lazy-loaded thumbnails
   - Bulk upload with drag & drop
   - Client-side image compression
   - Lightbox preview with zoom
 
 - **Template Generator**
+
   - Auto-generate validation schema from existing posts
   - Define frontmatter field types
   - Configure table columns
   - Export blank templates
 
 - **Post Workflow**
+
   - 3-step wizard (Assets → Content → Publish)
   - Smart image path detection
   - Automatic frontmatter validation
 
 - **Backup & Export**
+
   - ZIP archive of posts/images directories
-  - Export `.acmrc.json` configuration
+  - Export `.pageelrc.json` configuration
 
 - **Settings**
   - Project type configuration
@@ -49,11 +70,13 @@ First public release of Pageel Core - a Git-based CMS for static & hybrid websit
   - Multi-language support (EN/VI)
 
 #### Platform Support
+
 - GitHub
 - Gitea (self-hosted)
 - Gogs (self-hosted)
 
 #### Technical
+
 - React 19 + TypeScript 5.9
 - Vite 5+ build system
 - Client-side PAT encryption (AES-GCM)

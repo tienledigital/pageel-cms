@@ -189,21 +189,21 @@ const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({ gitService, repo,
             localStorage.setItem(columnsKey, JSON.stringify(selectedColumns));
             localStorage.setItem(widthsKey, JSON.stringify(columnWidths));
 
-            // 2. Update .acmrc.json in the repo
+            // 2. Update .pageelrc.json in the repo
             try {
-                // Fetch current state of repo root to check for .acmrc.json existence
+                // Fetch current state of repo root to check for .pageelrc.json existence
                 const rootItems = await gitService.getRepoContents('');
-                const configItem = rootItems.find(item => item.name === '.acmrc.json');
+                const configItem = rootItems.find(item => item.name === '.pageelrc.json');
 
                 let config: any = { version: 1 };
 
                 if (configItem) {
                     // File exists, read current content to preserve other settings
-                    const contentStr = await gitService.getFileContent('.acmrc.json');
+                    const contentStr = await gitService.getFileContent('.pageelrc.json');
                     try {
                         config = JSON.parse(contentStr);
                     } catch (e) {
-                        console.warn("Existing .acmrc.json is invalid JSON, overwriting.");
+                        console.warn("Existing .pageelrc.json is invalid JSON, overwriting.");
                     }
                 }
 
@@ -215,20 +215,20 @@ const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({ gitService, repo,
 
                 if (configItem) {
                     await gitService.updateFileContent(
-                        '.acmrc.json',
+                        '.pageelrc.json',
                         newContent,
                         'chore: update post template settings',
                         configItem.sha
                     );
                 } else {
                     await gitService.createFileFromString(
-                        '.acmrc.json',
+                        '.pageelrc.json',
                         newContent,
                         'chore: create pageel-core config'
                     );
                 }
             } catch (remoteError) {
-                console.warn("Failed to update .acmrc.json", remoteError);
+                console.warn("Failed to update .pageelrc.json", remoteError);
             }
 
             setCurrentTemplate(templateToSave);

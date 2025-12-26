@@ -23,21 +23,22 @@ A powerful, client-side Content Management System (CMS) for managing Markdown/MD
 
 ## ✨ Key Features
 
-| Feature | Description |
-| :--- | :--- |
-| 🔐 **No Backend Required** | Runs entirely in your browser, communicates directly with Git APIs |
+| Feature                       | Description                                                           |
+| :---------------------------- | :-------------------------------------------------------------------- |
+| 🔐 **No Backend Required**    | Runs entirely in your browser, communicates directly with Git APIs    |
 | 🔒 **Client-Side Encryption** | PAT encrypted with Web Crypto API (AES-GCM), stored in sessionStorage |
-| 🌍 **Multi-Platform Support** | GitHub, Gitea, and Gogs (self-hosted) |
-| 🌐 **Multi-Language** | English and Vietnamese (i18n ready) |
-| 🎨 **Notion-Style UI** | Clean, minimalist, distraction-free interface |
-| ⚡ **Optimistic Locking** | SHA-check prevents overwriting concurrent changes |
-| 🔗 **Deep Linking** | URL query parameters sync with app state |
+| 🌍 **Multi-Platform Support** | GitHub, Gitea, and Gogs (self-hosted)                                 |
+| 🌐 **Multi-Language**         | English and Vietnamese (i18n ready)                                   |
+| 🎨 **Notion-Style UI**        | Clean, minimalist, distraction-free interface                         |
+| ⚡ **Optimistic Locking**     | SHA-check prevents overwriting concurrent changes                     |
+| 🔗 **Deep Linking**           | URL query parameters sync with app state                              |
 
 ---
 
 ## 🧭 Application Modules
 
 ### 1. 📝 Manage Posts (`PostList`)
+
 The central hub for content management.
 
 - **View Modes:** Switch between dense data table or visual card grid with cover image previews
@@ -52,6 +53,7 @@ The central hub for content management.
 - **SHA Validation:** Ensures file integrity before updates
 
 ### 2. 🖼️ Manage Images (`ImageList`)
+
 Dedicated asset library for managing media files.
 
 - **Gallery View:** Visual grid with lazy-loaded thumbnails
@@ -66,6 +68,7 @@ Dedicated asset library for managing media files.
 - **Filtering:** Search by filename, sort by name/size
 
 ### 3. 📋 Post Template (`TemplateGenerator`)
+
 Define and validate content structure.
 
 - **Schema Generation:**
@@ -79,14 +82,17 @@ Define and validate content structure.
 - **Sample Download:** Export blank Markdown template with defined frontmatter
 
 ### 4. 🔄 Post Workflow (`PostWorkflow`)
+
 Guided 3-step wizard for creating quality content.
 
 **Step 1 - Assets:**
+
 - Bulk upload images with preview
 - Auto-compression based on settings
 - Rename images before commit
 
 **Step 2 - Content:**
+
 - Upload Markdown file
 - Automatic frontmatter validation against template
 - Smart image path detection and mapping
@@ -94,12 +100,14 @@ Guided 3-step wizard for creating quality content.
 - Update body image references automatically
 
 **Step 3 - Publish:**
+
 - Review all changes
 - Commit images first, then post
 - Customizable commit message templates
 - Success confirmation with quick actions
 
 ### 5. 💾 Backup (`BackupManager`)
+
 Data safety and export tools.
 
 - **Archive Downloads:**
@@ -107,9 +115,10 @@ Data safety and export tools.
   - Generate `.zip` of entire `images` directory
   - File size display before download
 - **Config Export:**
-  - Download `.acmrc.json` configuration file from repository
+  - Download `.pageelrc.json` configuration file from repository
 
 ### 6. ⚙️ Settings (`SettingsView`)
+
 Global application configuration.
 
 **Project Configuration:**
@@ -143,8 +152,9 @@ Global application configuration.
 | Update Image | `Update image: {filename}` |
 
 **Other Options:**
+
 - Import/Export local settings as JSON
-- Sync settings to `.acmrc.json` in repository
+- Sync settings to `.pageelrc.json` in repository
 - Delete remote config file
 - Language switcher (EN/VI)
 - Logout with optional settings reset
@@ -211,6 +221,7 @@ pageel-core/
 ### Core Design Patterns
 
 **1. Adapter Pattern (`IGitService` Interface)**
+
 ```typescript
 interface IGitService {
   getRepoContents(path: string): Promise<ContentInfo[]>;
@@ -224,11 +235,13 @@ interface IGitService {
   // ... discovery methods
 }
 ```
+
 - `GithubAdapter` - GitHub REST API v3
 - `GiteaAdapter` - Gitea API (self-hosted)
 - `GogsAdapter` - Gogs API (self-hosted)
 
 **2. Security Model**
+
 - PAT encrypted with **AES-GCM** (256-bit key)
 - Key generated per session via `crypto.getRandomValues()`
 - Encrypted token stored in `sessionStorage` (cleared on tab close)
@@ -240,9 +253,10 @@ interface IGitService {
 | `sessionStorage` | Encrypted PAT, crypto key, selected repo, service type |
 | `localStorage` | Settings (keyed by repo: `postsPath_{repo}`, `projectType_{repo}`, etc.) |
 | URL Query String | Active view/tab (`?view=posts`, `?view=images`) |
-| Remote `.acmrc.json` | Repository-synced configuration file |
+| Remote `.pageelrc.json` | Repository-synced configuration file |
 
 **4. Performance Optimizations**
+
 - **Git Tree API (Recursive):** Fetches entire directory tree in single request
 - **Lazy Loading:** Images loaded on scroll (IntersectionObserver)
 - **Blob Fetching:** Private repo images fetched via authenticated API
@@ -253,6 +267,7 @@ interface IGitService {
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Modern browser with ES2020+ support
 - Node.js 20.19+ or 22.12+ (for development)
 - Git repository on GitHub, Gitea, or Gogs
@@ -276,12 +291,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### 3. Generate Access Token
 
 **For GitHub:**
+
 1. Go to [GitHub Token Settings](https://github.com/settings/tokens/new?type=beta)
 2. Create a Fine-Grained Personal Access Token
 3. Select your repository
 4. Grant **Contents** permission (Read and write)
 
 **For Gitea/Gogs:**
+
 1. Navigate to Settings → Applications → Generate Token
 2. Copy the access token
 
@@ -305,41 +322,43 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Available Scripts
 
-| Command | Description |
-| :--- | :--- |
-| `npm run dev` | Start Vite development server (port 3000) |
-| `npm run build` | Build production bundle |
-| `npm run preview` | Preview production build locally |
+| Command           | Description                               |
+| :---------------- | :---------------------------------------- |
+| `npm run dev`     | Start Vite development server (port 3000) |
+| `npm run build`   | Build production bundle                   |
+| `npm run preview` | Preview production build locally          |
 
 ### Technology Stack
 
-| Category | Technology |
-| :--- | :--- |
-| **Framework** | React 19 |
-| **Language** | TypeScript 5.9+ |
-| **Build Tool** | Vite 5+ |
-| **Styling** | Tailwind CSS (CDN with Typography plugin) |
-| **Icons** | Custom SVG components (42 icons) |
-| **Fonts** | Inter (Google Fonts) |
+| Category       | Technology                                |
+| :------------- | :---------------------------------------- |
+| **Framework**  | React 19                                  |
+| **Language**   | TypeScript 5.9+                           |
+| **Build Tool** | Vite 5+                                   |
+| **Styling**    | Tailwind CSS (CDN with Typography plugin) |
+| **Icons**      | Custom SVG components (42 icons)          |
+| **Fonts**      | Inter (Google Fonts)                      |
 
 ### CDN Dependencies
 
-| Library | Purpose |
-| :--- | :--- |
-| `marked` | Markdown to HTML parsing |
-| `DOMPurify` | HTML sanitization |
-| `JSZip` | ZIP archive generation |
-| `js-yaml` | YAML frontmatter parsing |
+| Library     | Purpose                  |
+| :---------- | :----------------------- |
+| `marked`    | Markdown to HTML parsing |
+| `DOMPurify` | HTML sanitization        |
+| `JSZip`     | ZIP archive generation   |
+| `js-yaml`   | YAML frontmatter parsing |
 
 ---
 
 ## 📅 Roadmap
 
 ### Version 1.1 (Planned)
+
 - **WYSIWYG Markdown Editor:** Rich-text editing for non-technical users
 - **Image Gallery in Editor:** Insert images directly from asset library
 
 ### Future Enhancements
+
 - GitLab Support
 - Draft Mode with local auto-save
 - Scheduled Publishing
@@ -352,6 +371,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 Contributions are welcome! Please see our [Contributing Guide](./docs/guides/CONTRIBUTING.md) for details.
 
 ### Quick Start
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
@@ -359,6 +379,7 @@ Contributions are welcome! Please see our [Contributing Guide](./docs/guides/CON
 5. Open a Pull Request
 
 ### Reporting Issues
+
 - Use [GitHub Issues](https://github.com/pageel/pageel-core/issues)
 - Include browser version and console errors
 - Describe steps to reproduce

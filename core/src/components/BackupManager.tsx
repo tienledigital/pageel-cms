@@ -119,11 +119,11 @@ const BackupManager: React.FC<BackupManagerProps> = ({ gitService, repo, postsPa
 
     const handleDownloadConfig = async () => {
         try {
-            const content = await gitService.getFileContent('.acmrc.json');
+            const content = await gitService.getFileContent('.pageelrc.json');
             const blob = new Blob([content], { type: 'application/json' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = '.acmrc.json';
+            link.download = '.pageelrc.json';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

@@ -104,7 +104,7 @@ export const translations = {
         explorerHint: 'Folders with a ★ are suggested based on their content.',
         configTitle: 'Configuration',
         finishButton: 'Finish & Create Config',
-        createConfigHelp: 'This will create a .acmrc.json file in your repo to save these settings for your team.',
+        createConfigHelp: 'This will create a .pageelrc.json file in your repo to save these settings for your team.',
         projectTypeDesc: "Choose how you use this repository. This determines how image previews are handled.",
         projectTypeAstroName: "Web Project",
         projectTypeAstroDesc: "For a deployed website like Astro or Next.js. Requires a production domain to preview images.",
@@ -174,9 +174,9 @@ export const translations = {
         },
         dangerZone: {
           title: 'Reset App & Config',
-          descriptionLogout: "This will delete the .acmrc.json configuration file from your repository and reset your local settings. You will need to go through the setup wizard again.",
+          descriptionLogout: "This will delete the .pageelrc.json configuration file from your repository and reset your local settings. You will need to go through the setup wizard again.",
           resetButtonLogout: 'Delete Config & Reset',
-          confirmDelete: 'Are you sure? This will delete .acmrc.json from your repo and reset your local configuration.',
+          confirmDelete: 'Are you sure? This will delete .pageelrc.json from your repo and reset your local configuration.',
         },
         importExport: {
           title: 'Configuration Management',
@@ -491,9 +491,9 @@ export const translations = {
       },
       config: {
         title: 'Configuration Backup',
-        description: 'Download the .acmrc.json configuration file for this project.',
+        description: 'Download the .pageelrc.json configuration file for this project.',
         button: 'Download Config',
-        notFound: 'Configuration file (.acmrc.json) not found in repository.'
+        notFound: 'Configuration file (.pageelrc.json) not found in repository.'
       },
       posts: {
         title: 'Posts Backup',
@@ -637,7 +637,7 @@ export const translations = {
         explorerHint: 'Các thư mục có dấu ★ được gợi ý dựa trên nội dung của chúng.',
         configTitle: 'Cấu hình',
         finishButton: 'Hoàn tất & Tạo Config',
-        createConfigHelp: 'Sẽ tạo file .acmrc.json trong kho chứa để lưu cài đặt này cho cả nhóm.',
+        createConfigHelp: 'Sẽ tạo file .pageelrc.json trong kho chứa để lưu cài đặt này cho cả nhóm.',
         projectTypeDesc: "Chọn cách bạn sử dụng kho chứa này. Điều này quyết định cách xem trước hình ảnh.",
         projectTypeAstroName: "Dự án Web",
         projectTypeAstroDesc: "Dành cho một website đã triển khai như Astro hoặc Next.js. Yêu cầu tên miền production để xem trước ảnh.",
@@ -707,9 +707,9 @@ export const translations = {
         },
         dangerZone: {
           title: 'Reset App & Config',
-          descriptionLogout: "Thao tác này sẽ xóa file cấu hình .acmrc.json khỏi kho chứa của bạn và đặt lại cài đặt cục bộ. Bạn sẽ cần thực hiện lại wizard cài đặt.",
+          descriptionLogout: "Thao tác này sẽ xóa file cấu hình .pageelrc.json khỏi kho chứa của bạn và đặt lại cài đặt cục bộ. Bạn sẽ cần thực hiện lại wizard cài đặt.",
           resetButtonLogout: 'Xóa Config & Reset',
-          confirmDelete: 'Bạn có chắc chắn không? Hành động này sẽ xóa file .acmrc.json trên repo và đặt lại cài đặt cục bộ.',
+          confirmDelete: 'Bạn có chắc chắn không? Hành động này sẽ xóa file .pageelrc.json trên repo và đặt lại cài đặt cục bộ.',
         },
         importExport: {
           title: 'Quản lý Cấu hình',
@@ -1024,9 +1024,9 @@ export const translations = {
       },
       config: {
         title: 'Sao lưu Cấu hình',
-        description: 'Tải xuống file cấu hình .acmrc.json của dự án này.',
+        description: 'Tải xuống file cấu hình .pageelrc.json của dự án này.',
         button: 'Tải xuống Config',
-        notFound: 'Không tìm thấy file cấu hình (.acmrc.json) trong kho chứa.'
+        notFound: 'Không tìm thấy file cấu hình (.pageelrc.json) trong kho chứa.'
       },
       posts: {
         title: 'Sao lưu Bài viết',
