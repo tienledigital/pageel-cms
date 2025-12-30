@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Pageel Core will be documented in this file.
+All notable changes to Pageel CMS will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **BREAKING:** Renamed config file `.acmrc.json` → `.pageelrc.json`
+- **Branding:** Renamed "Pageel Core" → "Pageel CMS" across all docs
 - Refactored to feature-based folder structure (`src/features/`)
 - Dashboard now uses shared `SETTINGS_SCHEMA` and `DEFAULT_SETTINGS`
 - Auth storage: `sessionStorage` → `localStorage` (cross-tab persistence)
@@ -47,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🎉 Initial Release
 
-First public release of Pageel Core - a Git-based CMS for static & hybrid websites.
+First public release of Pageel CMS - a Git-based CMS for static & hybrid websites.
 
 #### Features
 
@@ -104,4 +105,4 @@ First public release of Pageel Core - a Git-based CMS for static & hybrid websit
 
 ---
 
-[1.0.0]: https://github.com/pageel/pageel-core/releases/tag/v1.0.0
+[1.0.0]: https://github.com/pageel/pageel-cms/releases/tag/v1.0.0

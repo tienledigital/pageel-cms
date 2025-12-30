@@ -1,4 +1,4 @@
-# Pageel Core
+# Pageel CMS
 
 > **Version:** 1.0.0 | **Updated:** December 2025
 
@@ -6,7 +6,7 @@ A powerful, client-side Content Management System (CMS) for managing Markdown/MD
 
 <p align="center">
   <a href="https://pageel.com">
-    <img src="https://raw.githubusercontent.com/pageel/pageel-core/main/.github/assets/pageel-logo.svg" width="200" alt="Pageel Logo">
+    <img src="https://raw.githubusercontent.com/pageel/pageel-cms/main/.github/assets/pageel-logo.svg" width="200" alt="Pageel Logo">
   </a>
 </p>
 <p align="center">
@@ -166,7 +166,7 @@ Global application configuration.
 ### Project Structure
 
 ```
-pageel-core/
+pageel-cms/
 ├── core/
 │   ├── src/
 │   │   ├── App.tsx             # Main application entry point
@@ -280,8 +280,8 @@ interface IGitService {
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/pageel/pageel-core.git
-cd pageel-core/core
+git clone https://github.com/pageel/pageel-cms.git
+cd pageel-cms/core
 npm install
 ```
 
@@ -357,26 +357,38 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📅 Roadmap
 
-### ✅ Phase 1: Foundation Refactor (Completed)
+### ✅ Phase 1-2: Multi-Collection Architecture (Completed)
 
 - Feature-based folder structure (`src/features/`)
-- Provider interfaces for extensibility
-- Shared settings schema and defaults
-- Navigation hook with browser history sync
-- Renamed config: `.acmrc.json` → `.pageelrc.json`
-
-### 🔄 Phase 2: State Management (Planned)
-
-- Zustand for global state
+- Zustand state management
 - Collection TypeScript interfaces
-- Migrate localStorage → IndexedDB
+- Multi-collection support with independent paths
+- Per-collection templates and settings
+- Sync to `.pageelrc.json`
 
-### 🚀 Future Enhancements
+### 🔄 Phase 3: v1.1.0 (Current)
+
+- Migrate localStorage → IndexedDB
+- Shared UI component library
+- Template editor per collection
+
+### 🚀 Future: v2.0
 
 - WYSIWYG Markdown Editor
 - GitLab Support
 - Scheduled Publishing
 - Image Gallery in Editor
+
+---
+
+## 🌐 Ecosystem
+
+| Product            | Type       | Purpose                                       |
+| ------------------ | ---------- | --------------------------------------------- |
+| **Pageel CMS**     | OSS (MIT)  | Git-native CMS for content & media            |
+| **Pageel Workhub** | Commercial | Team workspace: workflow, review, permissions |
+
+> Pageel CMS focuses on **content**. For team collaboration features, see Pageel Workhub.
 
 ---
 
@@ -394,7 +406,7 @@ Contributions are welcome! Please see our [Contributing Guide](./docs/guides/CON
 
 ### Reporting Issues
 
-- Use [GitHub Issues](https://github.com/pageel/pageel-core/issues)
+- Use [GitHub Issues](https://github.com/pageel/pageel-cms/issues)
 - Include browser version and console errors
 - Describe steps to reproduce
 

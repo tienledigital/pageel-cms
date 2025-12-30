@@ -1,6 +1,6 @@
-# Contributing to Pageel Core
+# Contributing to Pageel CMS
 
-Thank you for your interest in contributing to Pageel Core! This guide will help you get started.
+Thank you for your interest in contributing to Pageel CMS! This guide will help you get started.
 
 ---
 
@@ -19,8 +19,8 @@ Thank you for your interest in contributing to Pageel Core! This guide will help
 ```bash
 # Fork the repo on GitHub
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/pageel-core.git
-cd pageel-core
+git clone https://github.com/YOUR_USERNAME/pageel-cms.git
+cd pageel-cms
 ```
 
 ### 2. Setup Development Environment

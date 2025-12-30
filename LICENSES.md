@@ -1,10 +1,10 @@
 # License
 
-## Pageel Core
+## Pageel CMS
 - **License:** MIT License
 - **Copyright (c) 2025 Le Hong Tien (tienledigital) and REDD CO., LTD**
 - **Address:** 34 Le Van Huu Street, Hamlet 7, Long Xuyen Ward, An Giang Province, Vietnam
-- **Source:** [https://github.com/pageel/pageel-core](https://github.com/pageel/pageel-core)
+- **Source:** [https://github.com/pageel/pageel-cms](https://github.com/pageel/pageel-cms)
 
 See [LICENSE](./LICENSE) file for the full license text.
 

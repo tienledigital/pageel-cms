@@ -1,6 +1,6 @@
 # Development Guide
 
-A comprehensive guide for setting up and developing Pageel Core.
+A comprehensive guide for setting up and developing Pageel CMS.
 
 ---
 
@@ -25,14 +25,14 @@ pageel/                        # Workspace (not a git repo)
 │   └── strategy/
 ├── metadata.json              # Internal - workspace metadata
 │
-└── pageel-core/               # ← GIT REPO (push this folder)
+└── pageel-cms/               # ← GIT REPO (push this folder)
     ├── .gitignore
     ├── README.md
     ├── CHANGELOG.md
     ├── LICENSES.md
     ├── scripts/
     │   └── release.ps1        # Release automation
-    ├── core/                  # Pageel Core Application
+    ├── core/                  # Pageel CMS Application
     │   ├── src/
     │   │   ├── components/    # React components
     │   │   ├── services/      # Git API adapters
@@ -55,8 +55,8 @@ pageel/                        # Workspace (not a git repo)
 
 ```bash
 # Clone repo
-git clone https://github.com/pageel/pageel-core.git
-cd pageel-core
+git clone https://github.com/pageel/pageel-cms.git
+cd pageel-cms
 
 # Navigate to core
 cd core
@@ -87,8 +87,8 @@ App will run at [http://localhost:3000](http://localhost:3000)
 To release a new version:
 
 ```powershell
-# Navigate to pageel-core
-cd pageel-core
+# Navigate to pageel-cms
+cd pageel-cms
 
 # Run release script (dry-run first)
 .\scripts\release.ps1 1.1.0 -DryRun
