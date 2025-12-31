@@ -16,6 +16,7 @@ import { useI18n } from '../i18n/I18nContext';
 import ImageUploadModal from './ImageUploadModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { isImageFile, compressImage } from '../utils/image';
+import { getRawGithubUrl, resolveImageSource } from '../utils/github';
 
 interface ImageListProps {
   gitService: IGitService;
@@ -55,7 +56,8 @@ const ImagePreview: React.FC<{ image: GithubContent; gitService: IGitService; re
                     const blob = await gitService.getFileAsBlob(image.path);
                     if (isMounted) setSrc(URL.createObjectURL(blob));
                 } else {
-                     setSrc(`https://raw.githubusercontent.com/${repo.full_name}/${repo.default_branch}/${image.path}`);
+                    // BUG-11: Use central utility for robust Raw GitHub URLs
+                    setSrc(getRawGithubUrl(repo, image.path));
                 }
             } catch (e) {
                 // console.warn("Failed to load image", image.path);
@@ -204,18 +206,8 @@ const ImageList: React.FC<ImageListProps> = ({
     }, [path, gitService]);
 
     const getPublicUrl = (image: GithubContent) => {
-        let relPath = image.path;
-        if (relPath.startsWith('public/')) {
-            relPath = relPath.substring(7); 
-        }
-        if (!relPath.startsWith('/')) relPath = '/' + relPath;
-
-        if (projectType === 'astro' && domainUrl) {
-            const cleanDomain = domainUrl.replace(/\/$/, '');
-            return `${cleanDomain}${relPath}`;
-        }
-        
-        return relPath;
+        // BUG-11: Use central utility for consistent path resolution
+        return resolveImageSource(image.path, repo, projectType, domainUrl);
     };
 
     const copyToClipboard = (text: string) => {

@@ -16,6 +16,7 @@ import PostUploadValidationModal from './PostUploadValidationModal';
 import PostImageSelectionModal from './PostImageSelectionModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { useCollectionStore } from '../features/collections/store';
+import { resolveImageSource } from '../utils/github';
 
 interface PostListProps {
   gitService: IGitService;
@@ -359,16 +360,13 @@ const PostList: React.FC<PostListProps> = ({
           if (imageUrl) {
               // Format URL based on project settings
               let finalUrl = imageUrl;
-              if (projectType === 'astro' && domainUrl) {
-                  let relPath = imageUrl;
-                  if (relPath.startsWith('public/')) relPath = relPath.replace('public/', '/');
-                  else if (!relPath.startsWith('/')) relPath = '/' + relPath;
-                  const cleanDomain = domainUrl.replace(/\/$/, '');
-                  finalUrl = `${cleanDomain}${relPath}`;
-              } else {
-                  // Keep relative path or cleanup for other types if needed
-                  if (imageUrl.startsWith('public/')) finalUrl = imageUrl.replace('public/', '/');
-                  else if (!imageUrl.startsWith('/')) finalUrl = '/' + imageUrl;
+              
+              // Standardize: if starting with public/, remove it for the MD/frontmatter reference
+              // this makes the paths work in local Astro dev environments.
+              if (finalUrl.startsWith('public/')) {
+                  finalUrl = finalUrl.replace('public/', '/');
+              } else if (!finalUrl.startsWith('http') && !finalUrl.startsWith('/')) {
+                  finalUrl = '/' + finalUrl;
               }
 
               // 2. Update Frontmatter
@@ -416,21 +414,16 @@ const PostList: React.FC<PostListProps> = ({
   // Helper to resolve image URLs for display
   const resolveImageUrl = (thumbnailUrl: string | null): string | null | 'needs-domain' => {
     if (!thumbnailUrl) return null;
-    if (thumbnailUrl.startsWith('http')) return thumbnailUrl;
+    if (thumbnailUrl.startsWith('http') || thumbnailUrl.startsWith('data:')) return thumbnailUrl;
     
-    if (projectType === 'github' && !repo.private) {
-        const path = thumbnailUrl.startsWith('/') ? thumbnailUrl : `/${thumbnailUrl}`;
-        return `https://raw.githubusercontent.com/${repo.full_name}/${repo.default_branch}${path}`;
+    // BUG-11: Use central utility for consistent image source resolution
+    const resolved = resolveImageSource(thumbnailUrl, repo, projectType, domainUrl);
+    
+    if (!resolved && thumbnailUrl.startsWith('/') && !domainUrl && projectType === 'astro') {
+        return 'needs-domain';
     }
-
-    if (thumbnailUrl.startsWith('/')) {
-        if (domainUrl) {
-            return `${domainUrl.replace(/\/$/, '')}${thumbnailUrl}`;
-        } else {
-            return 'needs-domain';
-        }
-    }
-    return null; 
+    
+    return resolved || null;
   };
 
   const renderDynamicCell = (post: PostData, field: string) => {

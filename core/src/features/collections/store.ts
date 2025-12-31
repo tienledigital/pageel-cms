@@ -41,6 +41,9 @@ interface CollectionActions {
   
   /** Clear workspace */
   clearWorkspace: () => void;
+  
+  /** Batch set collections (overwrites existing) */
+  setCollections: (collections: Collection[]) => void;
 }
 
 export type CollectionStore = CollectionState & CollectionActions;
@@ -172,6 +175,20 @@ export const useCollectionStore = create<CollectionStore>()(
 
       clearWorkspace: () => {
         set({ workspace: null });
+      },
+      
+      setCollections: (collections) => {
+        set((state) => {
+          if (!state.workspace) return state;
+          return {
+            workspace: {
+              ...state.workspace,
+              collections,
+              activeCollectionId: collections[0]?.id || null,
+              updatedAt: new Date().toISOString(),
+            },
+          };
+        });
       },
     }),
     {

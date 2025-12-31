@@ -63,20 +63,23 @@ const App: React.FC = () => {
   const handleConfirmLogout = useCallback(() => {
     if (shouldResetOnLogout && selectedRepo) {
       const repoFullName = selectedRepo.full_name;
-      const repoSpecificKeys = [
-        `projectType_${repoFullName}`, `postsPath_${repoFullName}`, `imagesPath_${repoFullName}`,
-        `domainUrl_${repoFullName}`, `postTemplate_${repoFullName}`,
-      ];
-      const globalKeys = [
+      // MA-06: ALL settings keys are now scoped by repoId (except language)
+      const repoScopedKeys = [
+        'projectType', 'postsPath', 'imagesPath', 'domainUrl', 'postTemplate',
+        'postTableColumns', 'postTableColumnWidths',
         'postFileTypes', 'imageFileTypes', 'publishDateSource', 'imageCompressionEnabled',
         'maxImageSize', 'imageResizeMaxWidth', 'newPostCommit', 'updatePostCommit',
-        'newImageCommit', 'updateImageCommit', 'pageel-cms-lang'
+        'newImageCommit', 'updateImageCommit'
       ];
-      [...repoSpecificKeys, ...globalKeys].forEach(key => localStorage.removeItem(key));
+      repoScopedKeys.forEach(key => localStorage.removeItem(`${key}_${repoFullName}`));
+      // Language is user preference, optionally reset
+      localStorage.removeItem('pageel-cms-lang');
     }
 
     performSimpleLogout();
     setIsLogoutConfirmVisible(false);
+    // Force a full reload to completely clear all in-memory states (Zustand stores, etc.)
+    window.location.href = window.location.origin;
   }, [selectedRepo, shouldResetOnLogout, performSimpleLogout]);
 
   useEffect(() => {

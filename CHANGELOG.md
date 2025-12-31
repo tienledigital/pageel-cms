@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.1.0-beta.1] - 2025-12-31
 
 ### Added
 
@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New components: `CollectionPicker`, `NewCollectionModal`, `EditCollectionModal`
 - `sync.ts` for persisting collections to `.pageelrc.json`
 - Collection-aware `PostWorkflow` for template validation
+- **Documentation:** Image URL Resolution section in README
+- **New utility:** `github.ts` for centralized Raw GitHub URL generation
 
 ### Changed
 
@@ -42,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production Domain not prioritized from `.pageelrc.json` (BUG-07)
 - Removed redundant Posts/Images Directory from Settings (BUG-08)
 - Login form now accepts both full URL and `owner/repo` format (BUG-09)
+- Settings isolation: All localStorage keys are now scoped by repoId (MA-06)
+- **Image URL missing `public/` prefix for Astro projects** (BUG-11)
+- **Save settings overwriting `.pageelrc.json` with wrong format** (BUG-12)
 
 ---
 
@@ -106,4 +111,5 @@ First public release of Pageel CMS - a Git-based CMS for static & hybrid website
 
 ---
 
+[1.1.0-beta.1]: https://github.com/pageel/pageel-cms/releases/tag/v1.1.0-beta.1
 [1.0.0]: https://github.com/pageel/pageel-cms/releases/tag/v1.0.0

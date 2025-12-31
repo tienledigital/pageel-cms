@@ -123,14 +123,16 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
             // Initialize collection workspace for this repo
             initWorkspace(repo.full_name);
             
-            // Only load from .pageelrc.json if workspace has no collections yet (first load)
-            // This prevents duplicates when workspace is already populated from localStorage
-            const currentWorkspace = useCollectionStore.getState().workspace;
-            if (!currentWorkspace?.collections?.length) {
-                const collectionsData = await loadCollectionsFromPageelrc(gitService, repo.full_name);
-                if (collectionsData && collectionsData.collections.length > 0) {
-                    // Add collections from .pageelrc.json
-                    collectionsData.collections.forEach(c => addCollection(c));
+            // Always attempt to load from .pageelrc.json first - Repo Config is the "Source of Truth"
+            // This ensures settings are always fresh on login and prioritized over local cache
+            const collectionsData = await loadCollectionsFromPageelrc(gitService, repo.full_name);
+            if (collectionsData && collectionsData.collections.length > 0) {
+                // Clear existing collections if any to avoid mixing
+                const store = useCollectionStore.getState();
+                const workspace = store.workspace;
+                if (workspace) {
+                    // Force refresh collections from config
+                    store.setCollections(collectionsData.collections);
                     if (collectionsData.settings) {
                         updateWorkspaceSettings(collectionsData.settings);
                     }
@@ -138,14 +140,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
             }
             
             setScanning(true);
-            const projectTypeKey = `projectType_${repo.full_name}`;
-            const postsPathKey = `postsPath_${repo.full_name}`;
-            const imagesPathKey = `imagesPath_${repo.full_name}`;
-
-            const savedProjectType = localStorage.getItem(projectTypeKey) as ProjectType | null;
-            const savedPostsPath = localStorage.getItem(postsPathKey);
-            const savedImagesPath = localStorage.getItem(imagesPathKey);
-
+            const prefix = repo.full_name;
             const loadedSettings: Partial<AppSettings> = {};
             const keys: (keyof AppSettings)[] = [
                 'projectType', 'postsPath', 'imagesPath', 'domainUrl', 'postFileTypes', 'imageFileTypes',
@@ -153,113 +148,96 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                 'newPostCommit', 'updatePostCommit', 'newImageCommit', 'updateImageCommit'
             ];
 
+            // 1. Initial load from localStorage cache (scoped) for fast UI
             keys.forEach(key => {
-                let storageKey = ['projectType', 'postsPath', 'imagesPath', 'domainUrl'].includes(key)
-                    ? `${key}_${repo.full_name}`
-                    : key;
+                const storageKey = `${key}_${prefix}`;
                 const value = localStorage.getItem(storageKey);
                 if (value !== null) {
-                    if (key === 'imageCompressionEnabled') {
-                        (loadedSettings as any)[key] = value === 'true';
-                    } else if (key === 'maxImageSize') {
-                        let val = Number(value);
-                        if (val < 10) val = 500;
-                        if (val > 1024) val = 1024;
-                        (loadedSettings as any)[key] = val;
-                    } else if (key === 'imageResizeMaxWidth') {
-                        (loadedSettings as any)[key] = Number(value);
-                    } else {
-                        (loadedSettings as any)[key] = value;
-                    }
+                    if (key === 'imageCompressionEnabled') (loadedSettings as any)[key] = value === 'true';
+                    else if (['maxImageSize', 'imageResizeMaxWidth'].includes(key)) (loadedSettings as any)[key] = Number(value);
+                    else (loadedSettings as any)[key] = value;
                 }
             });
-            if (loadedSettings.imageResizeMaxWidth === undefined) {
-                loadedSettings.imageResizeMaxWidth = 1024;
-            }
-
+            if (loadedSettings.imageResizeMaxWidth === undefined) loadedSettings.imageResizeMaxWidth = 1024;
             setSettings(prev => ({ ...prev, ...loadedSettings }));
 
-            if (savedProjectType && savedPostsPath && savedImagesPath) {
+            // 2. Fetch and apply remote .pageelrc.json (Highest Priority)
+            try {
+                const configContent = await gitService.getFileContent('.pageelrc.json');
+                const config = JSON.parse(configContent);
+                if (config) {
+                    const newSettings = { ...settings, ...loadedSettings };
+                    const applyIfValid = (key: keyof AppSettings, value: any) => {
+                        if (value !== undefined && SETTINGS_SCHEMA[key] && SETTINGS_SCHEMA[key](value)) {
+                            (newSettings as any)[key] = value;
+                        }
+                    };
+                    
+                    // Paths & Project Info
+                    if (config.projectType) applyIfValid('projectType', config.projectType);
+                    if (config.paths?.posts) applyIfValid('postsPath', config.paths.posts);
+                    if (config.paths?.images) applyIfValid('imagesPath', config.paths.images);
+                    if (config.domainUrl) applyIfValid('domainUrl', config.domainUrl);
+
+                    // Technical Settings
+                    if (config.settings) {
+                        applyIfValid('postFileTypes', config.settings.postFileTypes);
+                        applyIfValid('imageFileTypes', config.settings.imageFileTypes);
+                        applyIfValid('publishDateSource', config.settings.publishDateSource);
+                        applyIfValid('imageCompressionEnabled', config.settings.imageCompressionEnabled);
+                        applyIfValid('maxImageSize', config.settings.maxImageSize);
+                        applyIfValid('imageResizeMaxWidth', config.settings.imageResizeMaxWidth);
+                    }
+
+                    // Commits
+                    if (config.commits) {
+                        applyIfValid('newPostCommit', config.commits.newPost);
+                        applyIfValid('updatePostCommit', config.commits.updatePost);
+                        applyIfValid('newImageCommit', config.commits.newImage);
+                        applyIfValid('updateImageCommit', config.commits.updateImage);
+                    }
+
+                    // Update state and refresh local cache
+                    setSettings(newSettings);
+                    keys.forEach(key => {
+                        if (newSettings[key] !== undefined) {
+                            localStorage.setItem(`${key}_${prefix}`, String(newSettings[key]));
+                        }
+                    });
+
+                    // UI & Templates
+                    if (config.templates?.frontmatter) localStorage.setItem(`postTemplate_${prefix}`, JSON.stringify(config.templates.frontmatter));
+                    if (config.ui?.tableColumns) localStorage.setItem(`postTableColumns_${prefix}`, JSON.stringify(config.ui.tableColumns));
+                    if (config.ui?.columnWidths) localStorage.setItem(`postTableColumnWidths_${prefix}`, JSON.stringify(config.ui.columnWidths));
+
+                    setSetupComplete(true);
+                    setScanning(false);
+                    return; // Successfully loaded from config
+                }
+            } catch (e) {
+                console.log("No valid .pageelrc.json found or fetch failed, proceeding to manual check.");
+            }
+
+            // 3. Fallback: If no config but we have enough info from cache, mark setup complete
+            if (loadedSettings.projectType && loadedSettings.postsPath && loadedSettings.imagesPath) {
                 setSetupComplete(true);
                 setScanning(false);
-            } else {
-                try {
-                    const configContent = await gitService.getFileContent('.pageelrc.json');
-                    const config = JSON.parse(configContent);
-                    if (config) {
-                        const newSettings = { ...settings };
-                        const applyIfValid = (key: keyof AppSettings, value: any) => {
-                            if (value !== undefined && SETTINGS_SCHEMA[key] && SETTINGS_SCHEMA[key](value)) {
-                                (newSettings as any)[key] = value;
-                            }
-                        };
-                        if (config.projectType) applyIfValid('projectType', config.projectType);
-                        if (config.paths?.posts) applyIfValid('postsPath', config.paths.posts);
-                        if (config.paths?.images) applyIfValid('imagesPath', config.paths.images);
-                        if (config.domainUrl) applyIfValid('domainUrl', config.domainUrl);
-
-                        if (config.settings) {
-                            applyIfValid('postFileTypes', config.settings.postFileTypes);
-                            applyIfValid('imageFileTypes', config.settings.imageFileTypes);
-                            applyIfValid('publishDateSource', config.settings.publishDateSource);
-                            applyIfValid('imageCompressionEnabled', config.settings.imageCompressionEnabled);
-                            applyIfValid('maxImageSize', config.settings.maxImageSize);
-                            applyIfValid('imageResizeMaxWidth', config.settings.imageResizeMaxWidth);
-                        }
-
-                        if (config.commits) {
-                            applyIfValid('newPostCommit', config.commits.newPost);
-                            applyIfValid('updatePostCommit', config.commits.updatePost);
-                            applyIfValid('newImageCommit', config.commits.newImage);
-                            applyIfValid('updateImageCommit', config.commits.updateImage);
-                        }
-
-                        setSettings(newSettings);
-                        const prefix = repo.full_name;
-                        localStorage.setItem(`projectType_${prefix}`, newSettings.projectType);
-                        localStorage.setItem(`postsPath_${prefix}`, newSettings.postsPath);
-                        localStorage.setItem(`imagesPath_${prefix}`, newSettings.imagesPath);
-                        if (newSettings.domainUrl) localStorage.setItem(`domainUrl_${prefix}`, newSettings.domainUrl);
-
-                        if (config.templates?.frontmatter) {
-                            localStorage.setItem(`postTemplate_${prefix}`, JSON.stringify(config.templates.frontmatter));
-                        }
-                        if (config.ui?.tableColumns) {
-                            localStorage.setItem(`postTableColumns_${prefix}`, JSON.stringify(config.ui.tableColumns));
-                        }
-                        if (config.ui?.columnWidths) {
-                            localStorage.setItem(`postTableColumnWidths_${prefix}`, JSON.stringify(config.ui.columnWidths));
-                        }
-
-                        setSetupComplete(true);
-                        setScanning(false);
-                        return;
-                    }
-                } catch (e) {
-                    console.log("No valid .pageelrc.json found or failed to parse, proceeding to scan.");
-                }
-
-                const [foundUrl, contentDirs, imageDirs] = await Promise.all([
-                    // BUG-07 fix: Only scan for production URL if not already set from config
-                    settings.domainUrl ? Promise.resolve(null) : gitService.findProductionUrl(),
-                    gitService.scanForContentDirectories(),
-                    gitService.scanForImageDirectories(),
-                ]);
-
-                // Only apply scanned URL if we don't already have one from config
-                if (foundUrl && !settings.domainUrl) {
-                    setSettings(prev => ({ ...prev, domainUrl: foundUrl }));
-                }
-                setSuggestedPostPaths(contentDirs);
-                if (contentDirs.length > 0) {
-                    setSettings(prev => ({ ...prev, postsPath: contentDirs[0] }));
-                }
-                setSuggestedImagePaths(imageDirs);
-                if (imageDirs.length > 0) {
-                    setSettings(prev => ({ ...prev, imagesPath: imageDirs[0] }));
-                }
-                setScanning(false);
+                return;
             }
+
+            // 4. Scanning fallback: Only if no config AND no local info
+            const [foundUrl, contentDirs, imageDirs] = await Promise.all([
+                settings.domainUrl ? Promise.resolve(null) : gitService.findProductionUrl(),
+                gitService.scanForContentDirectories(),
+                gitService.scanForImageDirectories(),
+            ]);
+
+            if (foundUrl && !settings.domainUrl) setSettings(prev => ({ ...prev, domainUrl: foundUrl }));
+            setSuggestedPostPaths(contentDirs);
+            if (contentDirs.length > 0) setSettings(prev => ({ ...prev, postsPath: contentDirs[0] }));
+            setSuggestedImagePaths(imageDirs);
+            if (imageDirs.length > 0) setSettings(prev => ({ ...prev, imagesPath: imageDirs[0] }));
+            setScanning(false);
         };
 
         loadSettingsAndScan();
@@ -281,52 +259,86 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
         try {
             const keys: (keyof AppSettings)[] = Object.keys(settings) as (keyof AppSettings)[];
             keys.forEach(key => {
-                let storageKey = ['projectType', 'postsPath', 'imagesPath', 'domainUrl'].includes(key)
-                    ? `${key}_${repo.full_name}`
-                    : key;
+                // MA-06: ALL settings keys are now scoped by repoId
+                const storageKey = `${key}_${repo.full_name}`;
                 localStorage.setItem(storageKey, String(settings[key]));
             });
 
-            try {
-                const sha = await (gitService as any).getFileSha('.pageelrc.json');
-                if (sha) {
-                    const templateKey = `postTemplate_${repo.full_name}`;
-                    const columnsKey = `postTableColumns_${repo.full_name}`;
-                    const widthsKey = `postTableColumnWidths_${repo.full_name}`;
-                    const savedTemplate = localStorage.getItem(templateKey);
-                    const savedColumns = localStorage.getItem(columnsKey);
-                    const savedWidths = localStorage.getItem(widthsKey);
-
-                    const configObject = {
-                        version: 1,
-                        projectType: settings.projectType,
-                        paths: { posts: settings.postsPath, images: settings.imagesPath },
-                        domainUrl: settings.domainUrl,
-                        templates: { frontmatter: savedTemplate ? JSON.parse(savedTemplate) : undefined },
-                        ui: {
-                            tableColumns: savedColumns ? JSON.parse(savedColumns) : undefined,
-                            columnWidths: savedWidths ? JSON.parse(savedWidths) : undefined
-                        },
-                        settings: {
-                            postFileTypes: settings.postFileTypes,
-                            imageFileTypes: settings.imageFileTypes,
-                            publishDateSource: settings.publishDateSource,
-                            imageCompressionEnabled: settings.imageCompressionEnabled,
-                            maxImageSize: settings.maxImageSize,
-                            imageResizeMaxWidth: settings.imageResizeMaxWidth
-                        },
-                        commits: {
-                            newPost: settings.newPostCommit,
-                            updatePost: settings.updatePostCommit,
-                            newImage: settings.newImageCommit,
-                            updateImage: settings.updateImageCommit
-                        }
-                    };
-                    await gitService.updateFileContent('.pageelrc.json', JSON.stringify(configObject, null, 2), 'chore: update pageel-cms config', sha);
-                    handleAction();
+            // BUG-12: Support .pageelrc.json v2 and prevent data loss (collections)
+            if (workspace) {
+                // 1. Sync workspace settings with current global settings
+                updateWorkspaceSettings(settings);
+                
+                // 2. Refresh active collection's UI/Template settings from localStorage (scoped)
+                const activeCollection = getActiveCollection();
+                if (activeCollection) {
+                    const prefix = repo.full_name;
+                    const savedTemplate = localStorage.getItem(`postTemplate_${prefix}`);
+                    const savedColumns = localStorage.getItem(`postTableColumns_${prefix}`);
+                    const savedWidths = localStorage.getItem(`postTableColumnWidths_${prefix}`);
+                    
+                    if (savedTemplate || savedColumns || savedWidths) {
+                        const updates: any = {};
+                        if (savedTemplate) updates.template = JSON.parse(savedTemplate);
+                        if (savedColumns) updates.tableColumns = JSON.parse(savedColumns);
+                        if (savedWidths) updates.columnWidths = JSON.parse(savedWidths);
+                        
+                        // We don't want to trigger a full loop, but we need to ensure config is fresh
+                        activeCollection.template = updates.template || activeCollection.template;
+                        activeCollection.tableColumns = updates.tableColumns || activeCollection.tableColumns;
+                        activeCollection.columnWidths = updates.columnWidths || activeCollection.columnWidths;
+                    }
                 }
-            } catch (e) {
-                console.warn("Could not update .pageelrc.json", e);
+
+                // 3. Save to Git using the standard utility
+                const success = await saveCollectionsToPageelrc(gitService, {
+                    ...workspace,
+                    settings: { ...workspace.settings, ...settings }
+                });
+                
+                if (success) {
+                    handleAction();
+                } else {
+                    console.error("Failed to save .pageelrc.json to repository");
+                }
+            } else {
+                // Fallback for very old v1 if workspace initialization failed (unlikely)
+                try {
+                    const sha = await (gitService as any).getFileSha('.pageelrc.json');
+                    if (sha) {
+                        const templateKey = `postTemplate_${repo.full_name}`;
+                        const columnsKey = `postTableColumns_${repo.full_name}`;
+                        const savedTemplate = localStorage.getItem(templateKey);
+                        const savedColumns = localStorage.getItem(columnsKey);
+                        
+                        const configObject = {
+                            version: 1,
+                            projectType: settings.projectType,
+                            paths: { posts: settings.postsPath, images: settings.imagesPath },
+                            domainUrl: settings.domainUrl,
+                            templates: { frontmatter: savedTemplate ? JSON.parse(savedTemplate) : undefined },
+                            ui: { tableColumns: savedColumns ? JSON.parse(savedColumns) : undefined },
+                            settings: {
+                                postFileTypes: settings.postFileTypes,
+                                imageFileTypes: settings.imageFileTypes,
+                                publishDateSource: settings.publishDateSource,
+                                imageCompressionEnabled: settings.imageCompressionEnabled,
+                                maxImageSize: settings.maxImageSize,
+                                imageResizeMaxWidth: settings.imageResizeMaxWidth
+                            },
+                            commits: {
+                                newPost: settings.newPostCommit,
+                                updatePost: settings.updatePostCommit,
+                                newImage: settings.newImageCommit,
+                                updateImage: settings.updateImageCommit
+                            }
+                        };
+                        await gitService.updateFileContent('.pageelrc.json', JSON.stringify(configObject, null, 2), 'chore: update pageel-cms config', sha);
+                        handleAction();
+                    }
+                } catch (e) {
+                    console.warn("Could not update legacy .pageelrc.json", e);
+                }
             }
 
             setSaveSuccess(true);
@@ -339,27 +351,30 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
     };
 
     const handleExportSettings = () => {
-        const repoSpecificKeysBase = ['projectType', 'postsPath', 'imagesPath', 'domainUrl', 'postTemplate'];
-        const globalKeys = [
+        // MA-06: ALL settings keys are now scoped by repoId (except language)
+        const repoScopedKeys = [
+            'projectType', 'postsPath', 'imagesPath', 'domainUrl', 'postTemplate',
             'postFileTypes', 'imageFileTypes', 'publishDateSource', 'imageCompressionEnabled',
             'maxImageSize', 'imageResizeMaxWidth', 'newPostCommit', 'updatePostCommit',
-            'newImageCommit', 'updateImageCommit', 'pageel-cms-lang'
+            'newImageCommit', 'updateImageCommit'
         ];
 
         const settingsToExport: { [key: string]: any } = {};
-        globalKeys.forEach(key => {
-            const value = localStorage.getItem(key);
+        
+        // Export repo-scoped keys
+        repoScopedKeys.forEach(key => {
+            const storageKey = `${key}_${repo.full_name}`;
+            const value = localStorage.getItem(storageKey);
             if (value !== null) {
                 if (key === 'imageCompressionEnabled') settingsToExport[key] = value === 'true';
                 else if (['maxImageSize', 'imageResizeMaxWidth'].includes(key)) settingsToExport[key] = Number(value);
                 else settingsToExport[key] = value;
             }
         });
-        repoSpecificKeysBase.forEach(key => {
-            const storageKey = `${key}_${repo.full_name}`;
-            const value = localStorage.getItem(storageKey);
-            if (value !== null) settingsToExport[key] = value;
-        });
+        
+        // Export global language setting (user preference)
+        const lang = localStorage.getItem('pageel-cms-lang');
+        if (lang) settingsToExport['pageel-cms-lang'] = lang;
 
         const blob = new Blob([JSON.stringify(settingsToExport, null, 2)], { type: 'application/json' });
         const link = document.createElement('a');
@@ -398,13 +413,12 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                     }
                 }
 
-                const repoSpecificKeysBase = ['projectType', 'postsPath', 'imagesPath', 'domainUrl', 'postTemplate'];
+                // MA-06: ALL settings keys are now scoped by repoId (except language)
                 Object.entries(importedSettings).forEach(([key, value]) => {
-                    if (!SETTINGS_SCHEMA[key]) return;
-                    let storageKey = key;
-                    if (repoSpecificKeysBase.includes(key)) {
-                        storageKey = `${key}_${repo.full_name}`;
-                    }
+                    if (!SETTINGS_SCHEMA[key] && key !== 'pageel-cms-lang') return;
+                    
+                    // Language is global, everything else is repo-scoped
+                    const storageKey = key === 'pageel-cms-lang' ? key : `${key}_${repo.full_name}`;
                     localStorage.setItem(storageKey, String(value));
                 });
 

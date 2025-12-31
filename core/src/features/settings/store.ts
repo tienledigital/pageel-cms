@@ -46,9 +46,15 @@ const getStorageKey = (key: string, repoId: string, isRepoSpecific: boolean) => 
 };
 
 /**
- * Repo-specific setting keys
+ * Repo-specific setting keys - ALL settings except language should be scoped by repoId
+ * MA-06: Settings Isolation - prevents settings leakage between repositories
  */
-const REPO_SPECIFIC_KEYS = ['projectType', 'postsPath', 'imagesPath', 'domainUrl'];
+const REPO_SPECIFIC_KEYS = [
+  'projectType', 'postsPath', 'imagesPath', 'domainUrl',
+  'postFileTypes', 'imageFileTypes', 'publishDateSource',
+  'imageCompressionEnabled', 'maxImageSize', 'imageResizeMaxWidth',
+  'newPostCommit', 'updatePostCommit', 'newImageCommit', 'updateImageCommit'
+];
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(

@@ -1,6 +1,6 @@
 # Pageel CMS
 
-> **Version:** 1.0.0 | **Updated:** December 2025
+> **Version:** 1.1.0-beta.1 | **Updated:** December 2025
 
 A powerful, client-side Content Management System (CMS) for managing Markdown/MDX content and images directly on **GitHub**, **Gitea**, or **Gogs** repositories. Built with React 19 and TypeScript, featuring a modern Notion-inspired UI.
 
@@ -266,6 +266,29 @@ interface IGitService {
 - **Lazy Loading:** Images loaded on scroll (IntersectionObserver)
 - **Blob Fetching:** Private repo images fetched via authenticated API
 - **Optimistic Locking:** SHA validation before all write operations
+
+### Image URL Resolution
+
+Pageel CMS handles image URLs differently based on repository visibility:
+
+| Repository Type | Image Loading Method   | URL Format                                                                           |
+| :-------------- | :--------------------- | :----------------------------------------------------------------------------------- |
+| **Public**      | Direct Raw GitHub URL  | `https://raw.githubusercontent.com/{owner}/{repo}/refs/heads/{branch}/public/{path}` |
+| **Private**     | Authenticated Blob API | Temporary blob URLs via `gitService.getFileAsBlob()`                                 |
+
+**Path Mapping:**
+
+For web projects (Astro, Next.js), static assets are typically stored in the `public/` folder:
+
+- **Frontmatter path:** `/images/photo.png` (web-relative)
+- **Physical path on GitHub:** `public/images/photo.png`
+- **Generated Raw URL:** `https://raw.githubusercontent.com/.../public/images/photo.png`
+
+The CMS automatically prepends `public/` to relative paths when generating Raw GitHub URLs, unless the path already includes it.
+
+**Private Repository Note:**
+
+Private repos require authentication for raw file access. The CMS uses the GitHub API with your PAT to fetch images as blobs and creates temporary local URLs. No tokens are exposed in the browser.
 
 ---
 

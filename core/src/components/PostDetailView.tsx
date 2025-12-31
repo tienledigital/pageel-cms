@@ -11,6 +11,7 @@ import { SpinnerIcon } from './icons/SpinnerIcon';
 import { ImageIcon } from './icons/ImageIcon';
 import { updateFrontmatter } from '../utils/parsing';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
+import { resolveImageSource } from '../utils/github';
 import { PlusIcon } from './icons/PlusIcon';
 import PostImageSelectionModal from './PostImageSelectionModal';
 
@@ -83,17 +84,9 @@ const CoverImage: React.FC<{
                     const blob = await gitService.getFileAsBlob(fullPath);
                     const url = URL.createObjectURL(blob);
                     setImageUrl(url);
-                } else if (projectType === 'astro' && domainUrl) {
-                    // Astro Web Project
-                    const cleanDomain = domainUrl.replace(/\/$/, '');
-                    const cleanPath = thumbnailUrl.startsWith('/') ? thumbnailUrl : `/${thumbnailUrl}`;
-                    setImageUrl(`${cleanDomain}${cleanPath}`);
-                } else if (projectType === 'github') {
-                    // Public Github
-                    const path = thumbnailUrl.startsWith('/') ? thumbnailUrl : `/${thumbnailUrl}`;
-                    setImageUrl(`https://raw.githubusercontent.com/${repo.full_name}/${repo.default_branch}/${path}`);
                 } else {
-                    setImageUrl(null); // Fallback or needs domain
+                    // BUG-11: Use central utility for consistent image source resolution
+                    setImageUrl(resolveImageSource(thumbnailUrl, repo, projectType, domainUrl));
                 }
             } catch (e) {
                 console.error("Failed to load cover image", e);
@@ -270,17 +263,15 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
 
           if (imageUrl) {
               // Format URL based on project settings
+              // Format URL based on project settings
               let finalUrl = imageUrl;
-              if (projectType === 'astro' && domainUrl) {
-                  let relPath = imageUrl;
-                  if (relPath.startsWith('public/')) relPath = relPath.replace('public/', '/');
-                  else if (!relPath.startsWith('/')) relPath = '/' + relPath;
-                  const cleanDomain = domainUrl.replace(/\/$/, '');
-                  finalUrl = `${cleanDomain}${relPath}`;
-              } else {
-                  // Keep relative path or cleanup for other types if needed
-                  if (imageUrl.startsWith('public/')) finalUrl = imageUrl.replace('public/', '/');
-                  else if (!imageUrl.startsWith('/')) finalUrl = '/' + imageUrl;
+              
+              // Standardize: if starting with public/, remove it for the MD/frontmatter reference
+              // this makes the paths work in local Astro dev environments.
+              if (finalUrl.startsWith('public/')) {
+                  finalUrl = finalUrl.replace('public/', '/');
+              } else if (!finalUrl.startsWith('http') && !finalUrl.startsWith('/')) {
+                  finalUrl = '/' + finalUrl;
               }
 
               // 2. Update Frontmatter
@@ -318,20 +309,8 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
       const resolveUrl = (url: string) => {
           if (url.startsWith('http') || url.startsWith('https') || url.startsWith('data:')) return url;
           
-          if (projectType === 'github' && !repo.private) {
-               const path = url.startsWith('/') ? url : `/${url}`;
-               return `https://raw.githubusercontent.com/${repo.full_name}/${repo.default_branch}${path}`;
-          }
-
-          if (projectType === 'astro' && domainUrl) {
-              const cleanDomain = domainUrl.replace(/\/$/, '');
-              let path = url;
-              if (path.startsWith('public/')) path = path.replace('public/', '/');
-              if (!path.startsWith('/')) path = '/' + path;
-              return `${cleanDomain}${path}`;
-          }
-          
-          return url;
+          // BUG-11: Use central utility for consistent image source resolution in markdown/HTML preview
+          return resolveImageSource(url, repo, projectType, domainUrl);
       };
 
       // 1. Replace Markdown images: ![alt](url "title")
