@@ -70,7 +70,7 @@ const App: React.FC = () => {
       const globalKeys = [
         'postFileTypes', 'imageFileTypes', 'publishDateSource', 'imageCompressionEnabled',
         'maxImageSize', 'imageResizeMaxWidth', 'newPostCommit', 'updatePostCommit',
-        'newImageCommit', 'updateImageCommit', 'pageel-core-lang'
+        'newImageCommit', 'updateImageCommit', 'pageel-cms-lang'
       ];
       [...repoSpecificKeys, ...globalKeys].forEach(key => localStorage.removeItem(key));
     }

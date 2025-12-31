@@ -64,7 +64,7 @@ export const SETTINGS_SCHEMA: { [key: string]: (v: unknown) => boolean } = {
   updatePostCommit: (v) => typeof v === 'string' && (v as string).length < 200,
   newImageCommit: (v) => typeof v === 'string' && (v as string).length < 200,
   updateImageCommit: (v) => typeof v === 'string' && (v as string).length < 200,
-  'pageel-core-lang': (v) => typeof v === 'string' && ['en', 'vi'].includes(v),
+  'pageel-cms-lang': (v) => typeof v === 'string' && ['en', 'vi'].includes(v),
 };
 
 /**

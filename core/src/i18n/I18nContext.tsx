@@ -19,12 +19,12 @@ const getNestedTranslation = (obj: any, key: string): string | undefined => {
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    return (localStorage.getItem('pageel-core-lang') as Language) || 'en';
+    return (localStorage.getItem('pageel-cms-lang') as Language) || 'en';
   });
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('pageel-core-lang', lang);
+    localStorage.setItem('pageel-cms-lang', lang);
   };
 
   const t = useCallback((key: string, options?: { [key: string]: string | number }): string => {

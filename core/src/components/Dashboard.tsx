@@ -322,7 +322,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                             updateImage: settings.updateImageCommit
                         }
                     };
-                    await gitService.updateFileContent('.pageelrc.json', JSON.stringify(configObject, null, 2), 'chore: update pageel-core config', sha);
+                    await gitService.updateFileContent('.pageelrc.json', JSON.stringify(configObject, null, 2), 'chore: update pageel-cms config', sha);
                     handleAction();
                 }
             } catch (e) {
@@ -343,7 +343,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
         const globalKeys = [
             'postFileTypes', 'imageFileTypes', 'publishDateSource', 'imageCompressionEnabled',
             'maxImageSize', 'imageResizeMaxWidth', 'newPostCommit', 'updatePostCommit',
-            'newImageCommit', 'updateImageCommit', 'pageel-core-lang'
+            'newImageCommit', 'updateImageCommit', 'pageel-cms-lang'
         ];
 
         const settingsToExport: { [key: string]: any } = {};
@@ -365,7 +365,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         const date = new Date().toISOString().split('T')[0];
-        link.download = `pageel-core-settings-${repo.name}-${date}.json`;
+        link.download = `pageel-cms-settings-${repo.name}-${date}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -465,7 +465,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
                     }
                 };
 
-                await gitService.createFileFromString('.pageelrc.json', JSON.stringify(configObject, null, 2), 'chore: add pageel-core config');
+                await gitService.createFileFromString('.pageelrc.json', JSON.stringify(configObject, null, 2), 'chore: add pageel-cms config');
                 handleAction();
             } catch (e) {
                 console.warn("Failed to create .pageelrc.json or it already exists", e);
@@ -479,7 +479,7 @@ const Dashboard: React.FC<DashboardProps> = ({ gitService, repo, user, serviceTy
         try {
             const sha = await (gitService as any).getFileSha('.pageelrc.json');
             if (sha) {
-                await gitService.deleteFile('.pageelrc.json', sha, 'chore: delete pageel-core config');
+                await gitService.deleteFile('.pageelrc.json', sha, 'chore: delete pageel-cms config');
             }
             const prefix = repo.full_name;
             const repoSpecificKeys = [

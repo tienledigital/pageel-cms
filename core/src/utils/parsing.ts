@@ -71,13 +71,28 @@ export const slugify = (str: string): string => {
 };
 
 export const parseRepoUrl = (url: string): { owner: string; repo: string } | null => {
+    const trimmed = url.trim().replace(/\/+$/, '').replace(/\.git$/, '');
+    
+    // Case 1: Simple "owner/repo" format (no protocol, no domain)
+    if (!trimmed.includes('://') && !trimmed.includes('.')) {
+        const parts = trimmed.split('/').filter(p => p);
+        if (parts.length === 2) {
+            return { owner: parts[0], repo: parts[1] };
+        }
+        return null;
+    }
+    
+    // Case 2: Full URL or URL with domain
     try {
-        // Use URL constructor for robust parsing of protocol, host, etc.
-        const urlObj = new URL(url);
-        // Split pathname and filter out empty strings from leading/trailing slashes
+        let urlToParse = trimmed;
+        // Add protocol if missing
+        if (!urlToParse.includes('://')) {
+            urlToParse = 'https://' + urlToParse;
+        }
+        
+        const urlObj = new URL(urlToParse);
         const pathParts = urlObj.pathname.split('/').filter(p => p);
         
-        // The owner and repo are typically the last two parts of the path.
         if (pathParts.length >= 2) {
             const repo = pathParts[pathParts.length - 1].replace('.git', '');
             const owner = pathParts[pathParts.length - 2];
@@ -85,7 +100,6 @@ export const parseRepoUrl = (url: string): { owner: string; repo: string } | nul
         }
         return null;
     } catch(e) {
-        // This will catch invalid URLs
         console.error("Invalid URL provided to parseRepoUrl:", e);
         return null;
     }

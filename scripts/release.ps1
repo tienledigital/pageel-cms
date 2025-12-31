@@ -20,10 +20,10 @@ if ($DryRun) {
     Write-Host "[DRY RUN MODE] Changes will NOT be applied`n" -ForegroundColor Yellow
 }
 
-# Step 1: Check we're in pageel-core
+# Step 1: Check we're in pageel-cms
 Write-Host "`n📁 Step 1: Checking repository..." -ForegroundColor Green
 if (-not (Test-Path (Join-Path $RepoRoot ".gitignore"))) {
-    Write-Host "❌ Error: Must run from pageel-core/scripts folder" -ForegroundColor Red
+    Write-Host "❌ Error: Must run from pageel-cms/scripts folder" -ForegroundColor Red
     exit 1
 }
 Write-Host "✓ Repository verified: $RepoRoot"

@@ -24,9 +24,29 @@ const GitServiceConnect: React.FC<GitServiceConnectProps> = ({ onSubmit, error }
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const isSelfHosted = serviceType === 'gitea' || serviceType === 'gogs';
-        if (token && repoUrl && (!isSelfHosted || (isSelfHosted && instanceUrl))) {
+        
+        // BUG-09 FIX: Normalize repo input - accept both full URL and owner/repo format
+        let normalizedRepo = repoUrl.trim();
+        
+        // Remove trailing slashes and .git suffix
+        normalizedRepo = normalizedRepo.replace(/\/+$/, '').replace(/\.git$/, '');
+        
+        // If it contains github.com, extract the owner/repo part
+        if (normalizedRepo.includes('github.com')) {
+            const githubIndex = normalizedRepo.indexOf('github.com');
+            const afterGithub = normalizedRepo.substring(githubIndex + 'github.com'.length);
+            const pathParts = afterGithub.replace(/^\/+/, '').split('/');
+            if (pathParts.length >= 2) {
+                normalizedRepo = pathParts[0] + '/' + pathParts[1];
+            }
+        }
+        
+        console.log('Normalized repo:', normalizedRepo);
+        
+        
+        if (token && normalizedRepo && (!isSelfHosted || (isSelfHosted && instanceUrl))) {
             setIsLoading(true);
-            await onSubmit(token, repoUrl, serviceType, instanceUrl);
+            await onSubmit(token, normalizedRepo, serviceType, instanceUrl);
             setIsLoading(false);
         }
     };
@@ -131,14 +151,15 @@ const GitServiceConnect: React.FC<GitServiceConnectProps> = ({ onSubmit, error }
                             </div>
                             <input
                                 id="repoUrl"
-                                type="url"
+                                type="text"
                                 value={repoUrl}
                                 onChange={(e) => setRepoUrl(e.target.value)}
-                                placeholder="owner/repo-name"
+                                placeholder="owner/repo or https://github.com/owner/repo"
                                 className="w-full pl-8 pr-3 py-1.5 bg-white border border-notion-border rounded-sm text-sm text-notion-text placeholder-notion-muted/50 focus:outline-none focus:ring-1 focus:ring-notion-blue focus:border-notion-blue transition-all shadow-sm"
                                 required
                             />
                         </div>
+                        <p className="mt-1 text-[9px] text-notion-muted">Accepts: owner/repo or full GitHub URL</p>
                     </div>
 
                     <div>

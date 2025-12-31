@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config sync using localStorage fallbacks instead of collection store (BUG-06)
 - Production Domain not prioritized from `.pageelrc.json` (BUG-07)
 - Removed redundant Posts/Images Directory from Settings (BUG-08)
+- Login form now accepts both full URL and `owner/repo` format (BUG-09)
 
 ---
 

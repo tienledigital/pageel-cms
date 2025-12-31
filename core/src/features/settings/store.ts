@@ -160,7 +160,7 @@ export const useSettingsStore = create<SettingsStore>()(
                 await gitService.updateFileContent(
                   '.pageelrc.json',
                   JSON.stringify(configObject, null, 2),
-                  'chore: update pageel-core config',
+                  'chore: update pageel-cms config',
                   sha
                 );
               }
