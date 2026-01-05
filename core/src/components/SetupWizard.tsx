@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { IGitService, AppSettings } from '../types';
 import { useI18n } from '../i18n/I18nContext';
@@ -8,6 +7,8 @@ import { GithubIcon } from './icons/GithubIcon';
 import { FolderIcon } from './icons/FolderIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { ImageIcon } from './icons/ImageIcon';
+import { SpinnerIcon } from './icons/SpinnerIcon';
+import { useAppStore } from '../features';
 
 interface SetupWizardProps {
     gitService: IGitService;
@@ -15,7 +16,7 @@ interface SetupWizardProps {
     onSettingsChange: (field: keyof AppSettings, value: any) => void;
     suggestedPostPaths: string[];
     suggestedImagePaths: string[];
-    onFinish: () => void;
+    onFinish: (collectionName: string) => void;
 }
 
 export const SetupWizard: React.FC<SetupWizardProps> = ({ 
@@ -27,10 +28,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
     onFinish 
 }) => {
     const { t } = useI18n();
+    const { isScanning, scanPhase, scanProgress } = useAppStore();
+    const [collectionName, setCollectionName] = React.useState('Main Collection');
 
     const isReady = settings.projectType === 'github'
-      ? !!settings.postsPath && !!settings.imagesPath
-      : !!settings.postsPath && !!settings.imagesPath && !!settings.domainUrl;
+      ? !!settings.postsPath && !!settings.imagesPath && !!collectionName.trim()
+      : !!settings.postsPath && !!settings.imagesPath && !!settings.domainUrl && !!collectionName.trim();
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-white p-4">
@@ -58,6 +61,25 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                         <div className="max-w-2xl mx-auto">
                             <h2 className="text-2xl font-bold text-notion-text mb-2">{t('dashboard.setup.wizardTitle')}</h2>
                             <p className="text-notion-muted text-sm mb-8">{t('dashboard.setup.wizardDesc')}</p>
+
+                            {/* MA-08: Scan Progress Bar */}
+                            {isScanning && scanPhase && (
+                                <div className="mb-6 bg-blue-50 border border-blue-200 rounded-md p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center">
+                                            <SpinnerIcon className="w-4 h-4 mr-2 animate-spin text-blue-600" />
+                                            <span className="text-sm font-medium text-blue-900">{scanPhase}</span>
+                                        </div>
+                                        <span className="text-sm text-blue-700 font-semibold">{scanProgress}%</span>
+                                    </div>
+                                    <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
+                                        <div 
+                                            className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
+                                            style={{ width: `${scanProgress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="space-y-8">
                                 {/* Project Type */}
@@ -161,6 +183,20 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                                     )}
                                 </section>
 
+                                {/* Collection Name */}
+                                <section>
+                                    <label htmlFor="setup-collection-name" className="block text-xs font-semibold text-notion-muted uppercase tracking-wider mb-2">Collection Name</label>
+                                    <input 
+                                        type="text" 
+                                        id="setup-collection-name" 
+                                        value={collectionName} 
+                                        onChange={(e) => setCollectionName(e.target.value)} 
+                                        className="w-full px-3 py-2 bg-white border border-notion-border rounded-sm text-sm text-notion-text focus:outline-none focus:ring-1 focus:ring-notion-blue focus:border-notion-blue shadow-sm" 
+                                        placeholder="Main Collection" 
+                                    />
+                                    <p className="text-xs text-notion-muted mt-1.5">Name for your first content collection</p>
+                                </section>
+
                                 {/* Domain (Astro Only) */}
                                 {settings.projectType === 'astro' && (
                                     <section>
@@ -186,7 +222,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                             {t('dashboard.setup.createConfigHelp')}
                         </span>
                         <button 
-                            onClick={onFinish} 
+                            onClick={() => onFinish(collectionName)} 
                             disabled={!isReady} 
                             className="inline-flex items-center justify-center bg-notion-blue hover:bg-blue-600 text-white font-medium py-1.5 px-4 rounded-sm transition-colors text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >

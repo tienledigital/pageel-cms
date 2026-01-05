@@ -42,6 +42,9 @@ interface CollectionActions {
   /** Clear workspace */
   clearWorkspace: () => void;
   
+  /** Reset workspace completely (BUG-13) */
+  resetWorkspace: () => void;
+  
   /** Batch set collections (overwrites existing) */
   setCollections: (collections: Collection[]) => void;
 }
@@ -175,6 +178,13 @@ export const useCollectionStore = create<CollectionStore>()(
 
       clearWorkspace: () => {
         set({ workspace: null });
+      },
+      
+      resetWorkspace: () => {
+        // BUG-13: Complete workspace reset including localStorage
+        set({ workspace: null });
+        // Clear persisted data
+        localStorage.removeItem('pageel-collections');
       },
       
       setCollections: (collections) => {

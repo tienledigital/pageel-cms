@@ -10,3 +10,4 @@ export * from './settings';
 export * from './navigation';
 export * from './app';
 export * from './collections';
+export { withSyncLock } from './app/syncLock'; // WF-06

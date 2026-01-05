@@ -117,13 +117,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </SettingRow>
 
                     {settings.projectType === 'astro' && (
-                        <SettingRow label={t('dashboard.settings.domain.label')} description={t('dashboard.settings.domain.help')}>
+                        <SettingRow 
+                            label={t('dashboard.settings.domain.label')} 
+                            description="Leave empty to use file library (Raw GitHub URLs). Enter your production URL for deployed sites."
+                        >
                              <input 
                                 type="url" 
                                 value={settings.domainUrl} 
                                 onChange={(e) => onSettingsChange('domainUrl', e.target.value)} 
                                 className="w-full max-w-xs px-3 py-1.5 text-sm border border-notion-border rounded-sm focus:outline-none focus:ring-1 focus:ring-notion-blue placeholder-notion-muted/50"
-                                placeholder="https://example.com"
+                                placeholder="https://example.com (optional)"
                              />
                         </SettingRow>
                     )}
