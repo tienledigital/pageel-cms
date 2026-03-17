@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.1.0] - 2026-03-17
+
 ### Added
 
 - **Initial Scan Refactor** (MA-08): Granular progress bar UI (0-100%) and phased scanning logic in Setup Wizard.
@@ -24,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Tailwind CSS v4 Migration**: Migrated from CDN-based Tailwind to build-time PostCSS setup for production readiness and better performance.
+- **Layout Consistency** (UI-01): Data views (PostList, Images, Template) now use full-width layout while form views (Settings, Backup) use centered layout for better readability.
 
 ### Fixed
 
@@ -140,5 +145,7 @@ First public release of Pageel CMS - a Git-based CMS for static & hybrid website
 
 ---
 
+[Unreleased]: https://github.com/pageel/pageel-cms/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/pageel/pageel-cms/compare/v1.1.0-beta.1...v1.1.0
 [1.1.0-beta.1]: https://github.com/pageel/pageel-cms/releases/tag/v1.1.0-beta.1
 [1.0.0]: https://github.com/pageel/pageel-cms/releases/tag/v1.0.0
