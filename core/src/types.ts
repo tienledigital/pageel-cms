@@ -88,6 +88,7 @@ export interface IGitService {
   getRepoContents(path: string): Promise<ContentInfo[]>;
   listFiles(path: string): Promise<RepoTreeInfo[]>; // Optimized for large lists
   getFileContent(path: string): Promise<string>;
+  getFileSha(path: string): Promise<string | null>; // TD-04: Get file SHA for updates
   uploadFile(path: string, file: File, commitMessage: string, sha?: string): Promise<any>;
   createFileFromString(path: string, newContent: string, commitMessage: string): Promise<any>;
   updateFileContent(path: string, newContent: string, commitMessage: string, sha: string): Promise<any>;

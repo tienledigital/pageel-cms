@@ -79,8 +79,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     setScanPhase,
   } = useAppStore();
   const {
-    settings,
-    setSettings,
     isSaving,
     setIsSaving,
     saveSuccess,
@@ -95,6 +93,26 @@ const Dashboard: React.FC<DashboardProps> = ({
     getActiveCollection,
     updateSettings: updateWorkspaceSettings,
   } = useCollectionStore();
+
+  // TD-08: Settings SSoT — derive AppSettings from workspace.settings + active collection
+  const activeCollection = getActiveCollection();
+  const settings: AppSettings = {
+    ...DEFAULT_SETTINGS,
+    ...(workspace?.settings || {}),
+    postsPath: activeCollection?.postsPath || '',
+    imagesPath: activeCollection?.imagesPath || '',
+  } as AppSettings;
+
+  const setSettings = (updater: Partial<AppSettings> | ((prev: AppSettings) => AppSettings)) => {
+    if (typeof updater === 'function') {
+      const newSettings = updater(settings);
+      const { postsPath, imagesPath, ...workspaceSettings } = newSettings;
+      updateWorkspaceSettings(workspaceSettings);
+    } else {
+      const { postsPath, imagesPath, ...workspaceSettings } = updater;
+      updateWorkspaceSettings(workspaceSettings);
+    }
+  };
 
   const [isNewCollectionModalOpen, setIsNewCollectionModalOpen] =
     useState(false);
@@ -134,8 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isSynced, setIsSynced] = useState(true);
   // URL sync is now handled by useAppStore
 
-  // Get active collection - use its paths, fallback to global settings
-  const activeCollection = getActiveCollection();
+  // TD-08: paths come from active collection or settings (already derived above)
   const effectivePostsPath = activeCollection?.postsPath || settings.postsPath;
   const effectiveImagesPath =
     activeCollection?.imagesPath || settings.imagesPath;
@@ -198,119 +215,56 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   useEffect(() => {
     const loadSettingsAndScan = async () => {
-      // Initialize collection workspace for this repo
+      // TD-08: Initialize workspace and load from .pageelrc.json (Single Source of Truth)
       initWorkspace(repo.full_name);
 
-      // Always attempt to load from .pageelrc.json first - Repo Config is the "Source of Truth"
-      // This ensures settings are always fresh on login and prioritized over local cache
+      setScanning(true);
+      setScanPhase("Initializing workspace...", 10);
+
+      // Step 1: Load collections and settings from .pageelrc.json → workspace
       const collectionsData = await loadCollectionsFromPageelrc(
         gitService,
         repo.full_name,
       );
+
       if (collectionsData && collectionsData.collections.length > 0) {
-        // Clear existing collections if any to avoid mixing
         const store = useCollectionStore.getState();
-        const workspace = store.workspace;
-        if (workspace) {
-          // Force refresh collections from config
-          store.setCollections(collectionsData.collections);
-          if (collectionsData.settings) {
-            updateWorkspaceSettings(collectionsData.settings);
-          }
+        store.setCollections(collectionsData.collections);
+        if (collectionsData.settings) {
+          updateWorkspaceSettings(collectionsData.settings);
         }
+
+        setScanPhase("Configuration loaded", 100);
+        setSetupComplete(true);
+        setScanning(false);
+        return;
       }
 
-      setScanning(true);
-      // MA-08: Phase 1 - Load Local Settings (0-20%)
-      setScanPhase("Loading saved settings...", 10);
-
-      const prefix = repo.full_name;
-      const keys: (keyof AppSettings)[] = [
-        "projectType",
-        "postsPath",
-        "imagesPath",
-        "domainUrl",
-        "postFileTypes",
-        "imageFileTypes",
-        "publishDateSource",
-        "imageCompressionEnabled",
-        "maxImageSize",
-        "imageResizeMaxWidth",
-        "newPostCommit",
-        "updatePostCommit",
-        "newImageCommit",
-        "updateImageCommit",
-      ];
-
-      const loadedSettings: Partial<AppSettings> = {};
-      keys.forEach((key) => {
-        const storageKey = `${key}_${prefix}`;
-        const value = localStorage.getItem(storageKey);
-        if (value !== null) {
-          const validator = SETTINGS_SCHEMA[key];
-          let parsedValue: unknown = value;
-          if (value === "true") parsedValue = true;
-          else if (value === "false") parsedValue = false;
-          else if (!isNaN(Number(value)) && value !== "")
-            parsedValue = Number(value);
-          if (!validator || validator(parsedValue)) {
-            (loadedSettings as Record<string, unknown>)[key] = parsedValue;
-          }
-        }
-      });
-      if (loadedSettings.imageResizeMaxWidth === undefined)
-        loadedSettings.imageResizeMaxWidth = 1024;
-      setSettings((prev) => ({ ...prev, ...loadedSettings }));
-
-      setScanPhase("Loading saved settings...", 20);
-
-      // MA-08: Phase 2 - Check Remote Config (20-50%)
+      // Step 2: No .pageelrc.json found — check if workspace has cached settings
       setScanPhase("Checking for .pageelrc.json...", 30);
 
       try {
         const configContent = await gitService.getFileContent(".pageelrc.json");
         const config = JSON.parse(configContent);
         if (config) {
-          const newSettings = { ...settings, ...loadedSettings };
+          // v1 format fallback — parse into workspace settings
+          const wsSettings: Partial<AppSettings> = {};
           const applyIfValid = (key: keyof AppSettings, value: any) => {
-            if (
-              value !== undefined &&
-              SETTINGS_SCHEMA[key] &&
-              SETTINGS_SCHEMA[key](value)
-            ) {
-              (newSettings as any)[key] = value;
+            if (value !== undefined && SETTINGS_SCHEMA[key] && SETTINGS_SCHEMA[key](value)) {
+              (wsSettings as any)[key] = value;
             }
           };
 
-          // Paths & Project Info
-          if (config.projectType)
-            applyIfValid("projectType", config.projectType);
-          if (config.paths?.posts)
-            applyIfValid("postsPath", config.paths.posts);
-          if (config.paths?.images)
-            applyIfValid("imagesPath", config.paths.images);
+          if (config.projectType) applyIfValid("projectType", config.projectType);
           if (config.domainUrl) applyIfValid("domainUrl", config.domainUrl);
-
-          // Technical Settings
           if (config.settings) {
             applyIfValid("postFileTypes", config.settings.postFileTypes);
             applyIfValid("imageFileTypes", config.settings.imageFileTypes);
-            applyIfValid(
-              "publishDateSource",
-              config.settings.publishDateSource,
-            );
-            applyIfValid(
-              "imageCompressionEnabled",
-              config.settings.imageCompressionEnabled,
-            );
+            applyIfValid("publishDateSource", config.settings.publishDateSource);
+            applyIfValid("imageCompressionEnabled", config.settings.imageCompressionEnabled);
             applyIfValid("maxImageSize", config.settings.maxImageSize);
-            applyIfValid(
-              "imageResizeMaxWidth",
-              config.settings.imageResizeMaxWidth,
-            );
+            applyIfValid("imageResizeMaxWidth", config.settings.imageResizeMaxWidth);
           }
-
-          // Commits
           if (config.commits) {
             applyIfValid("newPostCommit", config.commits.newPost);
             applyIfValid("updatePostCommit", config.commits.updatePost);
@@ -318,52 +272,20 @@ const Dashboard: React.FC<DashboardProps> = ({
             applyIfValid("updateImageCommit", config.commits.updateImage);
           }
 
-          // Update state and refresh local cache
-          setSettings(newSettings);
-          keys.forEach((key) => {
-            if (newSettings[key] !== undefined) {
-              localStorage.setItem(
-                `${key}_${prefix}`,
-                String(newSettings[key]),
-              );
-            }
-          });
-
-          // UI & Templates
-          if (config.templates?.frontmatter)
-            localStorage.setItem(
-              `postTemplate_${prefix}`,
-              JSON.stringify(config.templates.frontmatter),
-            );
-          if (config.ui?.tableColumns)
-            localStorage.setItem(
-              `postTableColumns_${prefix}`,
-              JSON.stringify(config.ui.tableColumns),
-            );
-          if (config.ui?.columnWidths)
-            localStorage.setItem(
-              `postTableColumnWidths_${prefix}`,
-              JSON.stringify(config.ui.columnWidths),
-            );
-
+          updateWorkspaceSettings(wsSettings);
           setScanPhase("Configuration loaded", 100);
           setSetupComplete(true);
           setScanning(false);
-          return; // Successfully loaded from config
+          return;
         }
       } catch (e) {
-        console.log(
-          "No valid .pageelrc.json found or fetch failed, proceeding to scan.",
-        );
+        console.log("No .pageelrc.json found, proceeding to scan.");
         setScanPhase("No configuration found, scanning repository...", 50);
       }
 
-      // 3. Fallback: If no config but we have enough info from cache, mark setup complete
-      if (
-        loadedSettings.projectType &&
-        loadedSettings.postsPath &&
-        loadedSettings.imagesPath
-      ) {
+      // Step 3: Check if workspace already has enough cached settings
+      const ws = useCollectionStore.getState().workspace;
+      if (ws && ws.settings.projectType && ws.collections.length > 0) {
         setScanPhase("Using cached settings", 100);
         setSetupComplete(true);
         setScanning(false);
@@ -411,66 +333,29 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   }, [isSetupComplete, fetchStats]);
 
+  // TD-08: Settings change updates workspace.settings directly (SSoT)
   const handleSettingsChange = (
     field: keyof AppSettings,
     value: string | number | boolean,
   ) => {
-    setSettings((prev) => ({ ...prev, [field]: value }));
+    if (field === 'postsPath' || field === 'imagesPath') {
+      // postsPath/imagesPath are per-collection in v2 — update via local state for setup
+      setSettings((prev) => ({ ...prev, [field]: value }));
+    } else {
+      updateWorkspaceSettings({ [field]: value });
+    }
   };
 
+  // TD-08: Simplified save — workspace.settings is SSoT, save via CollectionStore only
   const handleSaveSettings = async () => {
     setIsSaving(true);
     setSaveSuccess(false);
     try {
-      const keys: (keyof AppSettings)[] = Object.keys(
-        settings,
-      ) as (keyof AppSettings)[];
-      keys.forEach((key) => {
-        // MA-06: ALL settings keys are now scoped by repoId
-        const storageKey = `${key}_${repo.full_name}`;
-        localStorage.setItem(storageKey, String(settings[key]));
-      });
-
-      // BUG-12: Support .pageelrc.json v2 and prevent data loss (collections)
       if (workspace) {
-        // 1. Sync workspace settings with current global settings
-        updateWorkspaceSettings(settings);
-
-        // 2. Refresh active collection's UI/Template settings from localStorage (scoped)
-        const activeCollection = getActiveCollection();
-        if (activeCollection) {
-          const prefix = repo.full_name;
-          const savedTemplate = localStorage.getItem(`postTemplate_${prefix}`);
-          const savedColumns = localStorage.getItem(
-            `postTableColumns_${prefix}`,
-          );
-          const savedWidths = localStorage.getItem(
-            `postTableColumnWidths_${prefix}`,
-          );
-
-          if (savedTemplate || savedColumns || savedWidths) {
-            const updates: any = {};
-            if (savedTemplate) updates.template = JSON.parse(savedTemplate);
-            if (savedColumns) updates.tableColumns = JSON.parse(savedColumns);
-            if (savedWidths) updates.columnWidths = JSON.parse(savedWidths);
-
-            // We don't want to trigger a full loop, but we need to ensure config is fresh
-            activeCollection.template =
-              updates.template || activeCollection.template;
-            activeCollection.tableColumns =
-              updates.tableColumns || activeCollection.tableColumns;
-            activeCollection.columnWidths =
-              updates.columnWidths || activeCollection.columnWidths;
-          }
-        }
-
-        // 3. Save to Git using the standard utility (WF-06: with sync lock)
+        // Settings are already in workspace.settings (updated via handleSettingsChange)
+        // Just save the workspace to .pageelrc.json
         const success = await withSyncLock(
-          () =>
-            saveCollectionsToPageelrc(gitService, {
-              ...workspace,
-              settings: { ...workspace.settings, ...settings },
-            }),
+          () => saveCollectionsToPageelrc(gitService, workspace),
           "Saving settings...",
         );
 
@@ -478,62 +363,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           handleAction();
         } else {
           console.error("Failed to save .pageelrc.json to repository");
-        }
-      } else {
-        // Fallback for very old v1 if workspace initialization failed (unlikely)
-        try {
-          const sha = await (gitService as any).getFileSha(".pageelrc.json");
-          if (sha) {
-            const templateKey = `postTemplate_${repo.full_name}`;
-            const columnsKey = `postTableColumns_${repo.full_name}`;
-            const savedTemplate = localStorage.getItem(templateKey);
-            const savedColumns = localStorage.getItem(columnsKey);
-
-            const configObject = {
-              version: 1,
-              projectType: settings.projectType,
-              paths: { posts: settings.postsPath, images: settings.imagesPath },
-              domainUrl: settings.domainUrl,
-              templates: {
-                frontmatter: savedTemplate
-                  ? JSON.parse(savedTemplate)
-                  : undefined,
-              },
-              ui: {
-                tableColumns: savedColumns
-                  ? JSON.parse(savedColumns)
-                  : undefined,
-              },
-              settings: {
-                postFileTypes: settings.postFileTypes,
-                imageFileTypes: settings.imageFileTypes,
-                publishDateSource: settings.publishDateSource,
-                imageCompressionEnabled: settings.imageCompressionEnabled,
-                maxImageSize: settings.maxImageSize,
-                imageResizeMaxWidth: settings.imageResizeMaxWidth,
-              },
-              commits: {
-                newPost: settings.newPostCommit,
-                updatePost: settings.updatePostCommit,
-                newImage: settings.newImageCommit,
-                updateImage: settings.updateImageCommit,
-              },
-            };
-            // WF-06: Wrap with sync lock
-            await withSyncLock(
-              () =>
-                gitService.updateFileContent(
-                  ".pageelrc.json",
-                  JSON.stringify(configObject, null, 2),
-                  "chore: update pageel-cms config",
-                  sha,
-                ),
-              "Saving settings...",
-            );
-            handleAction();
-          }
-        } catch (e) {
-          console.warn("Could not update legacy .pageelrc.json", e);
         }
       }
 
@@ -684,7 +513,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           try {
             await withSyncLock(async () => {
-              const sha = await (gitService as any).getFileSha(
+              const sha = await (gitService).getFileSha(
                 ".pageelrc.json",
               );
               if (sha) {
@@ -778,7 +607,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           };
 
           await withSyncLock(async () => {
-            const sha = await (gitService as any).getFileSha(".pageelrc.json");
+            const sha = await (gitService).getFileSha(".pageelrc.json");
             if (sha) {
               await gitService.updateFileContent(
                 ".pageelrc.json",
@@ -938,7 +767,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     setIsSaving(true);
     try {
       // 1. Delete .pageelrc.json from repository (WF-06: with sync lock)
-      const sha = await (gitService as any).getFileSha(".pageelrc.json");
+      const sha = await (gitService).getFileSha(".pageelrc.json");
       if (sha) {
         await withSyncLock(
           () =>

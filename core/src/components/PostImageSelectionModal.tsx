@@ -150,7 +150,7 @@ const PostImageSelectionModal: React.FC<PostImageSelectionModalProps> = ({
         setConflictCheckStatus('checking');
         try {
             const path = imagesPath ? `${imagesPath}/${filename}` : filename;
-            const sha = await (gitService as any).getFileSha(path);
+            const sha = await gitService.getFileSha(path);
             setConflictCheckStatus(sha ? 'exists' : 'clear');
         } catch {
             setConflictCheckStatus('clear');

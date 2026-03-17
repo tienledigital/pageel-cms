@@ -74,13 +74,13 @@ export class GithubAdapter extends BaseGitService {
         return makeRequest<T>(endpoint, this.token, options);
     }
     
-    protected async getFileSha(path: string): Promise<string | undefined> {
+    async getFileSha(path: string): Promise<string | null> {
         try {
             const fileData = await this.makeRequest<{ sha: string }>(`/repos/${this.owner}/${this.repoName}/contents/${path}`);
             return fileData.sha;
         } catch (error) {
             if (error instanceof Error && error.message.includes('404')) {
-                return undefined; // File doesn't exist
+                return null; // File doesn't exist
             }
             throw error;
         }
