@@ -166,7 +166,7 @@ export async function saveCollectionsToPageelrc(
     // Check if file exists
     let sha: string | null = null;
     try {
-      sha = await (gitService as any).getFileSha('.pageelrc.json');
+      sha = await gitService.getFileSha('.pageelrc.json');
     } catch (e) {
       // File doesn't exist
     }

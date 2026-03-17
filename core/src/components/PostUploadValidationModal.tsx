@@ -168,7 +168,7 @@ const PostUploadValidationModal: React.FC<PostUploadValidationModalProps> = ({ f
 
   const checkFileExists = async (path: string): Promise<boolean> => {
       try {
-          const sha = await (gitService as any).getFileSha(path);
+          const sha = await gitService.getFileSha(path);
           return !!sha;
       } catch {
           return false;

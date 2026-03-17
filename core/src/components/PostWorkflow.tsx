@@ -180,14 +180,14 @@ const PostWorkflow: React.FC<PostWorkflowProps> = ({
         
         // Check 1: Exact path
         try {
-            const sha = await (gitService as any).getFileSha(p);
+            const sha = await gitService.getFileSha(p);
             if (sha) return 'valid';
         } catch {}
 
         // Check 2: public/ + path
         if (!p.startsWith('public/')) {
             try {
-                const sha = await (gitService as any).getFileSha(`public/${p}`);
+                const sha = await gitService.getFileSha(`public/${p}`);
                 if (sha) return 'valid';
             } catch {}
         }

@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { IGitService, GithubRepo, ProjectType } from '../types';
-import { parseMarkdown, updateFrontmatter } from '../utils/parsing';
+import { parseMarkdown } from '../utils/parsing';
 import { useI18n } from '../i18n/I18nContext';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { SearchIcon } from './icons/SearchIcon';
@@ -16,39 +16,20 @@ import PostUploadValidationModal from './PostUploadValidationModal';
 import PostImageSelectionModal from './PostImageSelectionModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { useCollectionStore } from '../features/collections/store';
+import { DEFAULT_SETTINGS } from '../features/settings/types';
 import { resolveImageSource } from '../utils/github';
 import FilterBar, { matchesFilter, FilterValue } from './FilterBar';
+import { usePostActions, PostData } from '../hooks/usePostActions';
 
+// TD-09: Simplified props — PostList reads settings from CollectionStore (SSoT)
 interface PostListProps {
   gitService: IGitService;
   repo: GithubRepo;
-  path: string;
-  imagesPath: string;
-  domainUrl: string;
-  projectType: ProjectType;
   onPostUpdate: () => void;
-  postFileTypes: string;
-  imageFileTypes: string;
-  newImageCommitTemplate: string;
-  updatePostCommitTemplate: string;
-  imageCompressionEnabled: boolean;
-  maxImageSize: number;
-  imageResizeMaxWidth: number;
   onAction: () => void;
 }
 
-type SortOption = string; // e.g. 'date-desc', 'title-asc', or '{field}-asc'/'{field}-desc'
-
-interface PostData {
-  frontmatter: Record<string, any>;
-  body: string;
-  rawContent: string;
-  name: string;
-  sha: string;
-  path: string;
-  html_url: string;
-  thumbnailUrl: string | null;
-}
+type SortOption = string;
 
 // Component to handle authenticated image loading for private repos
 const ThumbnailWithAuth: React.FC<{ gitService: IGitService, imagePath: string, className?: string }> = ({ gitService, imagePath, className = "h-full w-full object-cover" }) => {
@@ -72,7 +53,6 @@ const ThumbnailWithAuth: React.FC<{ gitService: IGitService, imagePath: string, 
 
         const fetchBlob = async () => {
             setIsLoading(true);
-            // Remove leading slash if present for API call
             const fullPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
             try {
                 const blob = await gitService.getFileAsBlob(fullPath);
@@ -81,7 +61,6 @@ const ThumbnailWithAuth: React.FC<{ gitService: IGitService, imagePath: string, 
                     setImageUrl(objectUrl);
                 }
             } catch (e) {
-                // console.error(`Failed to fetch blob for ${fullPath}`, e);
                 if (isMounted) setImageUrl(null);
             } finally {
                 if (isMounted) setIsLoading(false);
@@ -112,16 +91,21 @@ const ThumbnailWithAuth: React.FC<{ gitService: IGitService, imagePath: string, 
 const PostList: React.FC<PostListProps> = ({
   gitService,
   repo,
-  path,
-  imagesPath, // Needed for potential relative path resolution logic if expanded
-  domainUrl,
-  projectType,
   onPostUpdate,
-  postFileTypes,
-  imageFileTypes,
-  updatePostCommitTemplate,
   onAction
 }) => {
+  // TD-09: Read settings from CollectionStore (SSoT) instead of props
+  const { workspace, getActiveCollection } = useCollectionStore();
+  const activeCollection = getActiveCollection();
+  const wsSettings = workspace?.settings || {};
+  
+  const path = activeCollection?.postsPath || '';
+  const imagesPath = activeCollection?.imagesPath || '';
+  const domainUrl = (wsSettings as any).domainUrl || '';
+  const projectType: ProjectType = (wsSettings as any).projectType || DEFAULT_SETTINGS.projectType;
+  const postFileTypes = (wsSettings as any).postFileTypes || DEFAULT_SETTINGS.postFileTypes;
+  const imageFileTypes = (wsSettings as any).imageFileTypes || DEFAULT_SETTINGS.imageFileTypes;
+  const updatePostCommitTemplate = (wsSettings as any).updatePostCommit || DEFAULT_SETTINGS.updatePostCommit;
   const { t, language } = useI18n();
   const [posts, setPosts] = useState<PostData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -137,26 +121,41 @@ const PostList: React.FC<PostListProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
-  const [postToDelete, setPostToDelete] = useState<PostData | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Upload state
-  const uploadPostInputRef = useRef<HTMLInputElement>(null);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  // TD-10: Post actions extracted to hook
+  const {
+    uploadPostInputRef,
+    handleFileUpload,
+    confirmUpload,
+    uploadFile,
+    isUploadModalOpen,
+    setIsUploadModalOpen,
+    setUploadFile,
+    isUploading,
+    updatePostFileInputRef,
+    handleUpdatePostFile,
+    confirmUpdatePostFile,
+    handleUpdateImage,
+    handleImageConfirm,
+    isImageModalOpen,
+    setIsImageModalOpen,
+    postToUpdateImage,
+    postToDelete,
+    setPostToDelete,
+    confirmDelete,
+    isDeleting,
+  } = usePostActions({
+    gitService,
+    path,
+    imagesPath,
+    updatePostCommitTemplate,
+    onAction,
+    fetchPosts: () => fetchPosts(),
+    selectedPost,
+    setSelectedPost,
+  });
 
-  // Update specific post file state
-  const updatePostFileInputRef = useRef<HTMLInputElement>(null);
-  const [postToUpdateFile, setPostToUpdateFile] = useState<PostData | null>(null);
-
-  // Update specific post image state
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [postToUpdateImage, setPostToUpdateImage] = useState<PostData | null>(null);
-
-  // Columns Configuration
-  const { getActiveCollection } = useCollectionStore();
-  const activeCollection = getActiveCollection();
+  // Columns Configuration (activeCollection already destructured above via TD-09)
   const activeTemplate = activeCollection?.template || null;
   const [visibleFields, setVisibleFields] = useState<string[]>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({ '__name__': 35 });
@@ -361,145 +360,7 @@ const PostList: React.FC<PostListProps> = ({
   const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
   const currentPosts = filteredPosts.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE);
 
-  // --- Actions ---
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-          setUploadFile(e.target.files[0]);
-          setIsUploadModalOpen(true);
-          e.target.value = '';
-      }
-  };
-
-  const confirmUpload = async () => {
-      if (!uploadFile) return;
-      setIsUploading(true);
-      try {
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-              const content = e.target?.result as string;
-              const commitMsg = `feat(content): add post "${uploadFile.name}"`;
-              const filePath = path ? `${path}/${uploadFile.name}` : uploadFile.name;
-              
-              await gitService.createFileFromString(filePath, content, commitMsg);
-              onAction();
-              fetchPosts();
-              setIsUploadModalOpen(false);
-              setUploadFile(null);
-          };
-          reader.readAsText(uploadFile);
-      } catch (e) {
-          alert("Upload failed");
-      } finally {
-          setIsUploading(false);
-      }
-  };
-
-  // Update specific post file
-  const handleUpdatePostFile = (post: PostData) => {
-      setPostToUpdateFile(post);
-      updatePostFileInputRef.current?.click();
-  };
-
-  const confirmUpdatePostFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file || !postToUpdateFile) return;
-
-      setIsUploading(true);
-      try {
-          const reader = new FileReader();
-          reader.onload = async (ev) => {
-              const content = ev.target?.result as string;
-              const commitMsg = updatePostCommitTemplate.replace('{filename}', postToUpdateFile.name) || `fix(content): update post "${postToUpdateFile.name}"`;
-              
-              await gitService.updateFileContent(postToUpdateFile.path, content, commitMsg, postToUpdateFile.sha);
-              onAction();
-              fetchPosts();
-              setPostToUpdateFile(null);
-          };
-          reader.readAsText(file);
-      } catch (err) {
-          alert("Update failed");
-      } finally {
-          setIsUploading(false);
-          e.target.value = '';
-      }
-  };
-
-  // Update specific post image
-  const handleUpdateImage = (post: PostData) => {
-      setPostToUpdateImage(post);
-      setIsImageModalOpen(true);
-  };
-
-  const handleImageConfirm = async (result: { type: 'new' | 'existing', file?: File, path?: string }) => {
-      if (!postToUpdateImage) return;
-      setIsUploading(true);
-      try {
-          let imageUrl = '';
-          // 1. Upload if new
-          if (result.type === 'new' && result.file) {
-              const commitMsg = `feat(assets): add image "${result.file.name}"`;
-              const fullPath = imagesPath ? `${imagesPath}/${result.file.name}` : result.file.name;
-              await gitService.uploadFile(fullPath, result.file, commitMsg);
-              imageUrl = fullPath;
-          } else if (result.type === 'existing' && result.path) {
-              imageUrl = result.path;
-          }
-
-          if (imageUrl) {
-              // Format URL based on project settings
-              let finalUrl = imageUrl;
-              
-              // Standardize: if starting with public/, remove it for the MD/frontmatter reference
-              // this makes the paths work in local Astro dev environments.
-              if (finalUrl.startsWith('public/')) {
-                  finalUrl = finalUrl.replace('public/', '/');
-              } else if (!finalUrl.startsWith('http') && !finalUrl.startsWith('/')) {
-                  finalUrl = '/' + finalUrl;
-              }
-
-              // 2. Update Frontmatter
-              // Determine which field to update
-              const fm = postToUpdateImage.frontmatter;
-              let targetField = 'image';
-              if (fm.cover) targetField = 'cover';
-              else if (fm.thumbnail) targetField = 'thumbnail';
-              else if (fm.heroImage) targetField = 'heroImage';
-
-              const newContent = updateFrontmatter(postToUpdateImage.rawContent, { [targetField]: finalUrl });
-              const commitMsg = `fix(content): update image for "${postToUpdateImage.name}"`;
-              
-              await gitService.updateFileContent(postToUpdateImage.path, newContent, commitMsg, postToUpdateImage.sha);
-              onAction();
-              fetchPosts();
-          }
-      } catch (e) {
-          alert("Failed to update image");
-          console.error(e);
-      } finally {
-          setIsUploading(false);
-          setIsImageModalOpen(false);
-          setPostToUpdateImage(null);
-      }
-  };
-
-  const confirmDelete = async () => {
-      if (!postToDelete) return;
-      setIsDeleting(true);
-      try {
-          const commitMsg = `chore(content): delete post "${postToDelete.name}"`;
-          await gitService.deleteFile(postToDelete.path, postToDelete.sha, commitMsg);
-          onAction();
-          fetchPosts();
-          if (selectedPost?.path === postToDelete.path) setSelectedPost(null);
-      } catch (e) {
-          alert("Delete failed");
-      } finally {
-          setIsDeleting(false);
-          setPostToDelete(null);
-      }
-  };
 
   // Helper to resolve image URLs for display
   const resolveImageUrl = (thumbnailUrl: string | null): string | null | 'needs-domain' => {
