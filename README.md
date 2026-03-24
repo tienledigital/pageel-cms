@@ -1,32 +1,28 @@
-# Pageel CMS
-
-> **Version:** 1.2.1 | **Updated:** March 2026
-
-A powerful, client-side Content Management System (CMS) for managing Markdown/MDX content and images directly on **GitHub**, **Gitea**, or **Gogs** repositories. Built with **React 19** and **TypeScript**, featuring a modern Notion-inspired UI.
-
 <div align="center">
   <a href="https://pageel.com">
-    <img src="https://raw.githubusercontent.com/pageel/pageel-cms/main/.github/assets/pageel-icon.svg" width="80" alt="Pageel Icon">
+    <img src="https://raw.githubusercontent.com/pageel/pageel-cms/main/.github/assets/pageel-icon.svg" width="120" alt="Pageel CMS">
   </a>
-</div>
 
-<div align="center">
-  <h1>Git-native CMS for Astro & Next.js</h1>
+  <h1>Pageel CMS</h1>
+
+  <p><strong>Git-native CMS for Astro & Next.js</strong></p>
   <p>Run entirely in your browser. No database. No backend.</p>
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)](CHANGELOG.md)
-![Status](https://img.shields.io/badge/status-active-success.svg)
-[![GitHub](https://img.shields.io/badge/GitHub-supported-181717?logo=github&logoColor=white)](https://github.com)
-[![Astro](https://img.shields.io/badge/Astro-compatible-BC52EE?logo=astro&logoColor=white)](https://astro.build)
+  [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+  [![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)](CHANGELOG.md)
+  ![Status](https://img.shields.io/badge/status-active-success.svg)
+  [![GitHub](https://img.shields.io/badge/GitHub-supported-181717?logo=github&logoColor=white)](https://github.com)
+  [![Astro](https://img.shields.io/badge/Astro-compatible-BC52EE?logo=astro&logoColor=white)](https://astro.build)
 
-</div>
+  <br />
 
----
-
-<div align="center">
   <a href="README.md">🇺🇸 <b>English</b></a> | <a href="README.vi.md">🇻🇳 Tiếng Việt</a>
+
 </div>
+
+<br />
+
+A powerful, client-side Content Management System for managing Markdown/MDX content and images directly on **GitHub**, **Gitea**, or **Gogs** repositories. Built with **React 19** and **TypeScript**, featuring a modern Notion-inspired UI.
 
 ---
 
