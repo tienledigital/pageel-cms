@@ -125,6 +125,89 @@ const CoverImage: React.FC<{
     );
 };
 
+// --- Gallery Thumbnail Component (for gallery editor) ---
+const GalleryThumbnail: React.FC<{
+    src: string;
+    label: string;
+    gitService: IGitService;
+    repo: GithubRepo;
+    projectType: 'astro' | 'github';
+    domainUrl: string;
+}> = ({ src, label, gitService, repo, projectType, domainUrl }) => {
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!src) { setIsLoading(false); return; }
+
+        // External URLs → use directly
+        if (src.startsWith('http')) {
+            setImageUrl(src);
+            setIsLoading(false);
+            return;
+        }
+
+        const loadImage = async () => {
+            setIsLoading(true);
+            try {
+                if (projectType === 'github' && repo.private) {
+                    // Private repo → load via blob API
+                    const fullPath = src.startsWith('/') ? src.substring(1) : src;
+                    // Try with public/ prefix for Astro projects
+                    let pathToFetch = fullPath;
+                    if (!fullPath.startsWith('public/') && !fullPath.startsWith('images/')) {
+                        pathToFetch = 'public' + (fullPath.startsWith('/') ? fullPath : '/' + fullPath);
+                    }
+                    const blob = await gitService.getFileAsBlob(pathToFetch);
+                    setImageUrl(URL.createObjectURL(blob));
+                } else {
+                    // Public repo → resolve URL
+                    setImageUrl(resolveImageSource(src, repo, projectType, domainUrl));
+                }
+            } catch {
+                // Fallback: try alternate path
+                try {
+                    const altPath = src.startsWith('/') ? 'public' + src : src;
+                    const blob = await gitService.getFileAsBlob(altPath);
+                    setImageUrl(URL.createObjectURL(blob));
+                } catch {
+                    setImageUrl(null);
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadImage();
+
+        return () => {
+            if (imageUrl && imageUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(imageUrl);
+            }
+        };
+    }, [src]);
+
+    if (isLoading) {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-notion-sidebar/50">
+                <SpinnerIcon className="w-5 h-5 animate-spin text-notion-muted" />
+            </div>
+        );
+    }
+
+    if (imageUrl) {
+        return <img src={imageUrl} alt={label} className="w-full h-full object-cover" />;
+    }
+
+    return (
+        <div className="w-full h-full flex items-center justify-center bg-notion-sidebar/50">
+            <div className="text-center px-2">
+                <ImageIcon className="w-6 h-6 text-notion-muted/40 mx-auto mb-1" />
+                <p className="text-[9px] text-notion-muted/60 truncate max-w-full">{src.split('/').pop()}</p>
+            </div>
+        </div>
+    );
+};
+
 const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete, gitService, repo, projectType, domainUrl, onUpdate, imagesPath, imageFileTypes, onAction }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const { t, language } = useI18n();
@@ -641,12 +724,14 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
                             }`}
                           >
                             <div className="aspect-square bg-gray-50 rounded-t-lg overflow-hidden relative">
-                              <div className="w-full h-full flex items-center justify-center bg-notion-sidebar/50">
-                                <div className="text-center px-2">
-                                  <ImageIcon className="w-6 h-6 text-notion-muted/40 mx-auto mb-1" />
-                                  <p className="text-[9px] text-notion-muted/60 truncate max-w-full">{imgSrc.split('/').pop()}</p>
-                                </div>
-                              </div>
+                              <GalleryThumbnail 
+                                src={imgSrc} 
+                                label={label} 
+                                gitService={gitService} 
+                                repo={repo} 
+                                projectType={projectType} 
+                                domainUrl={domainUrl} 
+                              />
                               <span className="absolute top-1.5 left-1.5 text-[10px] bg-black/50 text-white px-1.5 py-0.5 rounded-full font-medium">
                                 {index + 1}
                               </span>

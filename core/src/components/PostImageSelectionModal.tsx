@@ -179,7 +179,7 @@ const PostImageSelectionModal: React.FC<PostImageSelectionModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
             <div className="bg-white rounded-lg shadow-xl border border-notion-border w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
                 <header className="px-4 py-3 border-b border-notion-border flex justify-between items-center bg-white flex-shrink-0">
                     <h3 className="text-base font-semibold text-notion-text">{t('postList.imageSelection.title')}</h3>
