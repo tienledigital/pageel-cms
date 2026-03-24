@@ -59,7 +59,7 @@ const DirectoryPicker: React.FC<DirectoryPickerProps> = ({ gitService, repo, onC
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col border border-notion-border overflow-hidden">
         <header className="px-4 py-3 border-b border-notion-border flex items-center justify-between bg-white">
           <div>
