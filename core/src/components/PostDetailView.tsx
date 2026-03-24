@@ -13,6 +13,8 @@ import { updateFrontmatter } from '../utils/parsing';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { resolveImageSource } from '../utils/github';
 import { PlusIcon } from './icons/PlusIcon';
+import { EditIcon } from './icons/EditIcon';
+import { CloseIcon } from './icons/CloseIcon';
 import PostImageSelectionModal from './PostImageSelectionModal';
 
 // Declare global variables from CDN scripts
@@ -338,19 +340,105 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
     return { __html: '<p>Preview library not loaded.</p>' };
   };
   
+  // --- Field Edit Modal State ---
+  const [fieldModalKey, setFieldModalKey] = useState<string | null>(null);
+  const [fieldModalValue, setFieldModalValue] = useState<string>('');
+  const [fieldModalIsComplex, setFieldModalIsComplex] = useState(false);
+
+  const openFieldModal = (key: string, value: any) => {
+      setFieldModalKey(key);
+      const isComplex = (typeof value === 'object' && value !== null);
+      setFieldModalIsComplex(isComplex);
+      if (isComplex) {
+          setFieldModalValue(JSON.stringify(value, null, 2));
+      } else if (Array.isArray(value)) {
+          setFieldModalValue(value.join(', '));
+      } else {
+          setFieldModalValue(String(value || ''));
+      }
+  };
+
+  const handleFieldModalSave = () => {
+      if (!fieldModalKey) return;
+      let parsedValue: any;
+      
+      if (fieldModalIsComplex) {
+          try {
+              parsedValue = JSON.parse(fieldModalValue);
+          } catch {
+              alert('Invalid JSON format. Please check the syntax.');
+              return;
+          }
+      } else {
+          // Check if the original value was an array (simple string array)
+          const originalValue = editableFrontmatter[fieldModalKey];
+          if (Array.isArray(originalValue)) {
+              parsedValue = fieldModalValue.split(',').map((s: string) => s.trim()).filter((s: string) => s);
+          } else {
+              parsedValue = fieldModalValue;
+          }
+      }
+      
+      handleFrontmatterChange(fieldModalKey, parsedValue);
+      setFieldModalKey(null);
+  };
+
+  // Helper: detect if value is array of objects
+  const isArrayOfObjects = (value: any): boolean => {
+      return Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null;
+  };
+
+  // Helper: format complex value for inline display
+  const formatComplexPreview = (value: any): string => {
+      if (isArrayOfObjects(value)) {
+          return `[${value.length} items]`;
+      }
+      if (Array.isArray(value)) {
+          return value.join(', ');
+      }
+      if (typeof value === 'object' && value !== null) {
+          const keys = Object.keys(value);
+          return `{${keys.slice(0, 3).join(', ')}${keys.length > 3 ? '…' : ''}}`;
+      }
+      return String(value || '');
+  };
+
   const renderInput = (key: string, value: any) => {
       const isDate = value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)) && value.includes('-') && value.length === 10);
       const isArray = Array.isArray(value);
+      const isComplex = typeof value === 'object' && value !== null && !isArray;
 
-      if (isArray) {
-          // Edit array as comma-separated string
+      // Array of objects (gallery, etc.) — show preview + edit button
+      if (isArrayOfObjects(value)) {
           return (
-              <input 
-                type="text" 
-                className="w-full bg-transparent border-b border-transparent focus:border-notion-blue focus:ring-0 text-sm py-0.5 px-1 hover:bg-notion-hover/50 rounded-sm transition-colors"
-                value={value.join(', ')}
-                onChange={(e) => handleFrontmatterChange(key, e.target.value.split(',').map((s: string) => s.trim()).filter((s: string) => s))}
-              />
+              <button
+                onClick={() => openFieldModal(key, value)}
+                className="w-full text-left flex items-center gap-1.5 px-1 py-0.5 text-sm text-notion-blue hover:bg-notion-hover/50 rounded-sm transition-colors group"
+              >
+                <span className="truncate text-xs">{`[${value.length} items]`}</span>
+                <EditIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </button>
+          );
+      }
+
+      // Simple arrays (tags, etc.) — inline edit + click to expand
+      if (isArray) {
+          return (
+              <div className="flex items-center w-full gap-1">
+                <input 
+                  type="text" 
+                  className="flex-grow bg-transparent border-b border-transparent focus:border-notion-blue focus:ring-0 text-sm py-0.5 px-1 hover:bg-notion-hover/50 rounded-sm transition-colors min-w-0"
+                  value={value.join(', ')}
+                  onChange={(e) => handleFrontmatterChange(key, e.target.value.split(',').map((s: string) => s.trim()).filter((s: string) => s))}
+                />
+                <button
+                  onClick={() => openFieldModal(key, value)}
+                  className="p-0.5 text-notion-muted hover:text-notion-blue rounded-sm transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                  title="Expand to edit"
+                >
+                  <EditIcon className="w-3 h-3" />
+                </button>
+              </div>
           );
       }
 
@@ -361,22 +449,44 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
                 type="date"
                 className="w-full bg-transparent border-b border-transparent focus:border-notion-blue focus:ring-0 text-sm py-0.5 px-1 hover:bg-notion-hover/50 rounded-sm transition-colors cursor-pointer"
                 value={dateStr}
-                onChange={(e) => handleFrontmatterChange(key, e.target.value)} // Date input returns YYYY-MM-DD
+                onChange={(e) => handleFrontmatterChange(key, e.target.value)}
               />
           );
       }
 
-      if (typeof value === 'object' && value !== null) {
-          return <span className="text-notion-muted text-sm italic px-1">[Complex Object - Editing Disabled]</span>;
+      // Complex objects (non-array) — show preview + edit button
+      if (isComplex) {
+          return (
+              <button
+                onClick={() => openFieldModal(key, value)}
+                className="w-full text-left flex items-center gap-1.5 px-1 py-0.5 text-sm text-notion-blue hover:bg-notion-hover/50 rounded-sm transition-colors group"
+              >
+                <span className="truncate text-xs">{formatComplexPreview(value)}</span>
+                <EditIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </button>
+          );
       }
 
+      // String/number — inline edit + expand button for long values
+      const isLongValue = typeof value === 'string' && value.length > 50;
       return (
-        <input 
-            type="text" 
-            className="w-full bg-transparent border-b border-transparent focus:border-notion-blue focus:ring-0 text-sm py-0.5 px-1 hover:bg-notion-hover/50 rounded-sm transition-colors"
-            value={String(value || '')}
-            onChange={(e) => handleFrontmatterChange(key, e.target.value)}
-        />
+        <div className="flex items-center w-full gap-1">
+          <input 
+              type="text" 
+              className="flex-grow bg-transparent border-b border-transparent focus:border-notion-blue focus:ring-0 text-sm py-0.5 px-1 hover:bg-notion-hover/50 rounded-sm transition-colors min-w-0"
+              value={String(value || '')}
+              onChange={(e) => handleFrontmatterChange(key, e.target.value)}
+          />
+          {isLongValue && (
+            <button
+              onClick={() => openFieldModal(key, value)}
+              className="p-0.5 text-notion-muted hover:text-notion-blue rounded-sm transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+              title="Expand to edit"
+            >
+              <EditIcon className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       );
   };
 
@@ -394,6 +504,56 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
             onClose={() => setIsImageModalOpen(false)}
             onConfirm={handleImageConfirm}
           />
+      )}
+
+      {/* Frontmatter Field Edit Modal */}
+      {fieldModalKey && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col border border-notion-border overflow-hidden">
+            <header className="px-5 py-3 border-b border-notion-border flex items-center justify-between bg-white">
+              <div className="flex items-center gap-2">
+                <EditIcon className="w-4 h-4 text-notion-muted" />
+                <h3 className="text-sm font-semibold text-notion-text capitalize">{fieldModalKey}</h3>
+                {fieldModalIsComplex && (
+                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-sm font-medium">JSON</span>
+                )}
+              </div>
+              <button onClick={() => setFieldModalKey(null)} className="text-notion-muted hover:text-notion-text p-1 hover:bg-notion-hover rounded-sm transition-colors">
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </header>
+            <div className="flex-grow p-4 overflow-y-auto">
+              <textarea
+                className={`w-full h-60 p-3 text-sm border border-notion-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y bg-notion-sidebar/20 ${
+                  fieldModalIsComplex ? 'font-mono text-xs leading-relaxed' : 'leading-normal'
+                }`}
+                value={fieldModalValue}
+                onChange={(e) => setFieldModalValue(e.target.value)}
+                spellCheck={!fieldModalIsComplex}
+                placeholder={fieldModalIsComplex ? 'Edit JSON...' : 'Edit value...'}
+              />
+              {fieldModalIsComplex && (
+                <p className="text-[10px] text-notion-muted mt-2">
+                  💡 Edit as JSON. Array of objects (gallery, etc.) must be valid JSON format.
+                </p>
+              )}
+            </div>
+            <footer className="px-4 py-3 border-t border-notion-border flex justify-end gap-2 bg-gray-50">
+              <button
+                onClick={() => setFieldModalKey(null)}
+                className="px-3 py-1.5 text-sm text-notion-text border border-notion-border rounded-sm hover:bg-notion-hover transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFieldModalSave}
+                className="px-4 py-1.5 text-sm text-white bg-notion-blue rounded-sm hover:bg-blue-600 transition-colors font-medium"
+              >
+                Save
+              </button>
+            </footer>
+          </div>
+        </div>
       )}
 
       {/* Sticky Header - Aligned to Content */}
