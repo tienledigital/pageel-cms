@@ -2,6 +2,7 @@
 // CMS page — React app mounted client-side
 // Protected by middleware (requires session cookie)
 import '../index.css';
+import CmsClient from '../components/CmsClient';
 ---
 
 <html lang="en">
@@ -11,7 +12,6 @@ import '../index.css';
   <title>Pageel CMS</title>
 </head>
 <body>
-  <div id="cms-app"></div>
-  <script src="../entrypoints/cms-client.ts"></script>
+  <CmsClient client:only="react" />
 </body>
 </html>

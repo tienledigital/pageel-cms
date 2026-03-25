@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **CMS Page Blank Issue**: Switched to Astro's declarative `client:only="react"` mounting directive instead of manual script injection for the React container to ensure proper hydration and fix blank screens in production.
+
 ### Changed
 
 - **Project structure**: Flattened `astro/` subdirectory to repo root (zero-config deploy)
