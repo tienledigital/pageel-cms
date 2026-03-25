@@ -133,9 +133,12 @@ server {
 
 ## Deploy to Vercel
 
+> **Important:** The Astro app lives in the `astro/` subdirectory, not at the repo root.
+> Vercel needs to know this — there are two ways to handle it.
+
 ### 1. Swap Adapter
 
-In `astro.config.mjs`, replace the adapter:
+In `astro/astro.config.mjs`, replace the adapter:
 
 ```diff
 - import node from '@astrojs/node';
@@ -152,24 +155,45 @@ In `astro.config.mjs`, replace the adapter:
   });
 ```
 
-### 2. Install Vercel adapter
-
 ```bash
-npm install @astrojs/vercel
+cd astro && npm install @astrojs/vercel
 ```
 
-### 3. Configure Vercel Project
+### 2. Configure Root Directory (choose ONE method)
+
+#### Method A: `vercel.json` at repo root (recommended — already included)
+
+The repo includes a `vercel.json` that tells Vercel how to find the app:
+
+```json
+{
+  "buildCommand": "cd astro && npm install && npm run build",
+  "outputDirectory": "astro/dist",
+  "installCommand": "cd astro && npm install",
+  "framework": "astro"
+}
+```
+
+This file is already in the repo — no extra config needed on Vercel.
+
+#### Method B: Vercel Dashboard setting
+
+If you prefer not to use `vercel.json`:
+
+1. Go to **Vercel Dashboard → Project → Settings → General**
+2. Set **Root Directory** to `astro`
+3. Vercel will then treat `astro/` as the project root
 
 | Setting | Value |
 |:--------|:------|
 | **Root Directory** | `astro` |
 | **Framework** | Astro (auto-detected) |
-| **Build Command** | `npm run build` |
-| **Output Directory** | `dist` |
+| **Build Command** | `npm run build` (runs inside Root Directory) |
+| **Output Directory** | `dist` (relative to Root Directory) |
 
-### 4. Set Environment Variables
+### 3. Set Environment Variables
 
-In Vercel Dashboard → Project → Settings → Environment Variables:
+In **Vercel Dashboard → Project → Settings → Environment Variables**:
 
 ```
 CMS_USER       = admin
@@ -183,11 +207,11 @@ CMS_SERVICE    = github
 > **Note:** Vercel environment variables are NOT processed by dotenv-expand,
 > so bcrypt hashes with `$` characters work without escaping.
 
-### 5. Deploy
+### 4. Deploy
 
 ```bash
 # Via Vercel CLI
-vercel --prod
+cd astro && vercel --prod
 
 # Or push to GitHub — Vercel auto-deploys from connected repo
 ```
