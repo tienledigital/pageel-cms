@@ -9,8 +9,8 @@
   <p>Manage your content where your code lives. No database required.</p>
 
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-  [![Version](https://img.shields.io/badge/version-2.0.0--beta-blue.svg)](CHANGELOG.md)
-  ![Status](https://img.shields.io/badge/status-beta-yellow.svg)
+  [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+  ![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)
   [![GitHub](https://img.shields.io/badge/GitHub-supported-181717?logo=github&logoColor=white)](https://github.com)
   [![Astro](https://img.shields.io/badge/Astro-6-BC52EE?logo=astro&logoColor=white)](https://astro.build)
   [![Node.js](https://img.shields.io/badge/Node.js-22+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
@@ -134,10 +134,14 @@ Open [http://localhost:4321](http://localhost:4321) — you'll be redirected to 
 ### 4. Generate Password Hash
 
 ```bash
+# After npm install (step 1)
+npx pageel-cms hash your-password
+
+# Or without project installed:
 node -e "require('bcryptjs').hash('your-password', 12).then(h => console.log(h))"
 ```
 
-Copy the output to `CMS_PASS_HASH` in your `.env` file.
+Copy the output hash to `CMS_PASS_HASH` in your `.env` file (wrap in double quotes).
 
 ### 5. Production Build
 
@@ -163,7 +167,7 @@ See [docs/deployment.md](docs/deployment.md) for VPS, Docker, and Vercel deploym
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](./docs/guides/CONTRIBUTING.md) for details.
+Contributions are welcome!
 
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)

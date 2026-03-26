@@ -17,6 +17,33 @@ We are grateful to the developers for their contributions to the open-source com
 
 ---
 
+## Astro
+- **License:** MIT License
+- **Copyright (c) 2021 Fred K. Schott**
+- **Source:** https://astro.build/
+
+MIT License — see React section below for full text.
+
+---
+
+## bcryptjs
+- **License:** MIT License
+- **Copyright (c) 2012 Nevins Bartolomeo, 2024 Daniel Wirtz**
+- **Source:** https://github.com/nicolo-ribaudo/bcryptjs
+
+MIT License — see React section below for full text.
+
+---
+
+## Zustand
+- **License:** MIT License
+- **Copyright (c) 2019 Paul Henschel**
+- **Source:** https://github.com/pmndrs/zustand
+
+MIT License — see React section below for full text.
+
+---
+
 ## React & React DOM
 - **License:** MIT License
 - **Copyright (c) Meta Platforms, Inc. and affiliates.**

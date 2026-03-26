@@ -7,14 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.0.0] - 2026-03-26
 
 ### Added
 
 - **Dynamic Session Credentials (Multi-Tenant)**: When `GITHUB_TOKEN` and `CMS_REPO` are not set in environment variables, the login page displays additional fields for users to provide their own GitHub token and repository. Credentials are verified against the GitHub API before being stored securely in the HMAC-signed HttpOnly session cookie. This enables a single CMS deployment to serve multiple repositories/users.
+- **CLI Hash Utility**: Run `npx pageel-cms hash <password>` to generate bcrypt hashes for `CMS_PASS_HASH`. Replaces manual Node.js one-liners with a user-friendly CLI command.
 
 ### Fixed
 
+- **BUG-19: Connect Mode proxy/git 500**: Added middleware Layer 3 credentials completeness check — prevents stale sessions after mode transitions (Server→Connect→Open). Detects missing Git credentials early and redirects to login with a clear error message instead of returning 500.
+- **Bcrypt hash truncation**: Added `isValidBcryptHash()` validation (60 chars + `$2[aby]$` prefix). Rejects corrupted hashes from Vite's dotenv-expand `$`-expansion, falling back to raw `.env` file read.
 - **CMS Page Blank Issue**: Switched to Astro's declarative `client:only="react"` mounting directive instead of manual script injection for the React container to ensure proper hydration and fix blank screens in production.
 
 ### Changed
@@ -22,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Project structure**: Flattened `astro/` subdirectory to repo root (zero-config deploy)
 - **Adapter**: Default adapter switched from `@astrojs/node` to `@astrojs/vercel`
 - **`@astrojs/node`** moved to devDependencies (for local dev only)
+- **LICENSES.md**: Added Astro, bcryptjs, and Zustand attributions
 
 ### Removed
 
@@ -235,7 +239,7 @@ First public release of Pageel CMS - a Git-based CMS for static & hybrid website
 
 ---
 
-[Unreleased]: https://github.com/pageel/pageel-cms/compare/v2.0.0-beta.0...HEAD
+[2.0.0]: https://github.com/pageel/pageel-cms/compare/v2.0.0-beta.0...v2.0.0
 [2.0.0-beta.0]: https://github.com/pageel/pageel-cms/compare/v1.2.1...v2.0.0-beta.0
 [1.2.1]: https://github.com/pageel/pageel-cms/compare/v1.1.0...v1.2.1
 [1.1.0]: https://github.com/pageel/pageel-cms/compare/v1.1.0-beta.1...v1.1.0

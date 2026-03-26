@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> **Version**: 2.0.0-beta | **Updated**: 2026-03-25
+> **Version**: 2.0.0 | **Updated**: 2026-03-26
 
 ## Prerequisites
 
@@ -14,28 +14,30 @@ Create a `.env` file (see `.env.example`):
 
 | Variable | Required | Description |
 |:---------|:---------|:------------|
-| `CMS_USER` | ✅ | Login username |
-| `CMS_PASS_HASH` | ✅ | Bcrypt hash of the login password |
-| `CMS_SECRET` | ✅ | Random string (min 16 chars) for session signing |
-| `GITHUB_TOKEN` | ✅ | Git personal access token (fine-grained recommended) |
-| `CMS_REPO` | ✅ | Repository in `owner/repo` format |
-| `CMS_SERVICE` | ❌ | `github` (default), `gitea`, or `gogs` |
-| `CMS_INSTANCE_URL` | ❌ | Self-hosted instance URL (for Gitea/Gogs) |
+| `CMS_USER` | Server/Connect | Login username |
+| `CMS_PASS_HASH` | Server/Connect | Bcrypt hash of the login password |
+| `CMS_SECRET` | ✅ Always | Random string (min 16 chars) for session signing |
+| `GITHUB_TOKEN` | Server only | Git personal access token (fine-grained recommended) |
+| `CMS_REPO` | Server only | Repository in `owner/repo` format |
+| `CMS_SERVICE` | ❌ Optional | `github` (default), `gitea`, or `gogs` |
+| `CMS_INSTANCE_URL` | ❌ Optional | Self-hosted instance URL (for Gitea/Gogs) |
+
+> **Modes:** Set all vars for **Server Mode**. Omit `GITHUB_TOKEN`/`CMS_REPO` for **Connect Mode** (users provide at login). Omit `CMS_USER`/`CMS_PASS_HASH` too for **Open Mode**.
 
 ## Generating CMS_PASS_HASH
 
 The password is stored as a **bcrypt hash** — the server never stores your plaintext password.
 
-### Option 1: Using Node.js (recommended)
+### Option 1: Using Node.js
 
 ```bash
-node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('your-password', 12).then(h => console.log(h))"
+node -e "require('bcryptjs').hash('your-password', 12).then(h => console.log(h))"
 ```
 
-### Option 2: Using npx (no install required)
+### Option 2: Using project CLI (after `npm install`)
 
 ```bash
-npx -y bcryptjs-cli hash "your-password" 12
+npx pageel-cms hash your-password
 ```
 
 ### Option 3: Online generator
@@ -211,4 +213,4 @@ Before going to production:
 
 ---
 
-_Last updated: 2026-03-25_
+_Last updated: 2026-03-26_

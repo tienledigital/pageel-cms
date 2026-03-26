@@ -9,8 +9,8 @@
   <p>Quản lý nội dung ngay nơi code của bạn. Không cần database.</p>
 
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-  [![Version](https://img.shields.io/badge/version-2.0.0--beta-blue.svg)](CHANGELOG.md)
-  ![Status](https://img.shields.io/badge/status-beta-yellow.svg)
+  [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+  ![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)
   [![GitHub](https://img.shields.io/badge/GitHub-supported-181717?logo=github&logoColor=white)](https://github.com)
   [![Astro](https://img.shields.io/badge/Astro-6-BC52EE?logo=astro&logoColor=white)](https://astro.build)
   [![Node.js](https://img.shields.io/badge/Node.js-22+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
@@ -134,10 +134,14 @@ Mở [http://localhost:4321](http://localhost:4321) — sẽ chuyển hướng �
 ### 4. Tạo Password Hash
 
 ```bash
+# Sau khi npm install (đã làm bước 1)
+npx pageel-cms hash mat-khau-cua-ban
+
+# Hoặc không cần project:
 node -e "require('bcryptjs').hash('mat-khau-cua-ban', 12).then(h => console.log(h))"
 ```
 
-Copy kết quả vào `CMS_PASS_HASH` trong file `.env`.
+Copy kết quả hash vào `CMS_PASS_HASH` trong file `.env` (bọc trong dấu ngoặc kép).
 
 ### 5. Build Production
 
@@ -163,7 +167,7 @@ Xem [docs/deployment.md](docs/deployment.md) để biết cách deploy lên VPS,
 
 ## 🤝 Đóng góp
 
-Chúng tôi hoan nghênh mọi đóng góp! Xem [Hướng dẫn đóng góp](./docs/guides/CONTRIBUTING.md).
+Chúng tôi hoan nghênh mọi đóng góp!
 
 1. Fork repository
 2. Tạo feature branch (`git checkout -b feature/tinh-nang-moi`)
