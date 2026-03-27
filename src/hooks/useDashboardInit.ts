@@ -256,13 +256,14 @@ export function useDashboardInit({ gitService, repo }: UseDashboardInitParams): 
         if (imageDirs.length > 0)
           setSettings((prev) => ({ ...prev, imagesPath: imageDirs[0] }));
 
-        // BUG-20: Auto-config — skip SetupWizard when scan found dirs
-        if (contentDirs.length > 0 && imageDirs.length > 0) {
+        // BUG-20: Auto-config — always create default config, skip SetupWizard
+        // User can adjust paths later in Settings
+        {
           try {
             setScanPhase("Auto-creating configuration...", 95);
 
-            const autoPostsPath = contentDirs[0];
-            const autoImagesPath = imageDirs[0];
+            const autoPostsPath = contentDirs[0] || '';
+            const autoImagesPath = imageDirs[0] || DEFAULT_SETTINGS.imagesPath;
             const detectedProjectType = foundUrl ? 'astro' : 'github';
             const detectedDomainUrl = foundUrl || '';
 
