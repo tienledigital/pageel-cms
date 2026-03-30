@@ -1,0 +1,137 @@
+# Publish @pageel/* packages to npm
+#
+# Triggers:
+#   - Push tag matching v* (e.g. v2.1.0)
+#   - Manual workflow_dispatch
+#
+# Security:
+#   - npm provenance enabled (S1)
+#   - Dependency audit before publish
+#   - Packages published in dependency order
+
+name: Publish Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip actual publish)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+# Required for npm provenance
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  publish:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    needs: audit
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Build packages in dependency order:
+      # 1. plugin-types (no deps)
+      # 2. plugin-mdx (depends on plugin-types)
+      # 3. cms-bridge (standalone)
+      - name: Build @pageel/plugin-types
+        run: npm run build -w packages/plugin-types
+
+      - name: Build @pageel/plugin-mdx
+        run: npm run build -w packages/plugin-mdx
+
+      - name: Build @pageel/cms (bridge)
+        run: npm run build -w packages/cms-bridge
+
+      # Verify builds
+      - name: Verify build artifacts
+        run: |
+          echo "=== @pageel/plugin-types ==="
+          ls -la packages/plugin-types/dist/
+          echo "=== @pageel/plugin-mdx ==="
+          ls -la packages/plugin-mdx/dist/
+          echo "=== @pageel/cms ==="
+          ls -la packages/cms-bridge/dist/
+
+      # Publish in dependency order with provenance
+      - name: Publish @pageel/plugin-types
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: npm publish -w packages/plugin-types --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @pageel/plugin-mdx
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: npm publish -w packages/plugin-mdx --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @pageel/cms
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: npm publish -w packages/cms-bridge --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Dry run mode
+      - name: Dry Run — @pageel/plugin-types
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: npm publish -w packages/plugin-types --dry-run
+
+      - name: Dry Run — @pageel/plugin-mdx
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: npm publish -w packages/plugin-mdx --dry-run
+
+      - name: Dry Run — @pageel/cms
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: npm publish -w packages/cms-bridge --dry-run
+
+      - name: Summary
+        run: |
+          echo "## 📦 Published Packages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|:--------|:--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| @pageel/plugin-types | $(node -p "require('./packages/plugin-types/package.json').version") |" >> $GITHUB_STEP_SUMMARY
+          echo "| @pageel/plugin-mdx | $(node -p "require('./packages/plugin-mdx/package.json').version") |" >> $GITHUB_STEP_SUMMARY
+          echo "| @pageel/cms | $(node -p "require('./packages/cms-bridge/package.json').version") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "⚠️ **Dry run mode** — packages were NOT actually published." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All packages published with provenance." >> $GITHUB_STEP_SUMMARY
+          fi
