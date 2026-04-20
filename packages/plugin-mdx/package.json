@@ -1,6 +1,6 @@
 {
   "name": "@pageel/plugin-mdx",
-  "version": "0.1.0",
+  "version": "0.2.0-beta.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/pageel/pageel-cms",
@@ -32,5 +32,11 @@
   },
   "license": "MIT",
   "description": "MDXEditor WYSIWYG plugin for Pageel CMS",
-  "keywords": ["pageel", "cms", "plugin", "mdxeditor", "wysiwyg"]
+  "keywords": [
+    "pageel",
+    "cms",
+    "plugin",
+    "mdxeditor",
+    "wysiwyg"
+  ]
 }
