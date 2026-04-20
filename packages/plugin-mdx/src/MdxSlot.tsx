@@ -126,7 +126,11 @@ export function MdxEditorSlot({
               onClick={async () => {
                 const path = await requestImageRef.current?.();
                 if (path) {
-                  activeRef.current?.insertMarkdown(`![](${path})`);
+                  // Must restore focus first, otherwise insertMarkdown will silently fail
+                  activeRef.current?.focus();
+                  setTimeout(() => {
+                    activeRef.current?.insertMarkdown(`![](${path})`);
+                  }, 50);
                 }
               }}
               className="flex items-center justify-center p-1.5 hover:bg-gray-100 rounded text-gray-700 text-sm ml-1"
