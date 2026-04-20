@@ -261,6 +261,11 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
       setIsDirty(true);
   };
 
+  const handleEditorChange = useCallback((markdown: string) => {
+      setEditableBody(markdown);
+      setIsDirty(true);
+  }, []);
+
   const handleAddMissingField = (key: string) => {
       let defaultValue: any = "";
       if (key === 'date' || key === 'publishDate') defaultValue = new Date().toISOString().split('T')[0];
@@ -935,11 +940,8 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
                             </div>
                         }
                         props={{
-                            value: editableBody,
-                            onChange: (markdown: string) => {
-                                setEditableBody(markdown);
-                                setIsDirty(true);
-                            },
+                            initialValue: editableBody,
+                            onChange: handleEditorChange,
                             frontmatter: editableFrontmatter,
                             gitService: createEditorGitService(gitService, imagesPath),
                             imagesPath,

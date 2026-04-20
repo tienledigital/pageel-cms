@@ -25,10 +25,11 @@ import {
   ListsToggle,
   CreateLink,
   type ImageUploadHandler,
+  type MDXEditorMethods
 } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
 import type { EditorProps } from '@pageel/plugin-types';
-import { useMemo, useCallback, useRef } from 'react';
+import { useMemo, useCallback, useRef, useEffect } from 'react';
 
 // ── B1: Debounce utility ──
 function useDebouncedCallback<T extends (...args: any[]) => void>(
@@ -52,11 +53,16 @@ function useDebouncedCallback<T extends (...args: any[]) => void>(
 
 // ── Editor Component ──
 export function MdxEditorSlot({
-  value,
+  initialValue,
   onChange,
   gitService,
+  imageBaseUrl,
+  externalMarkdown,
+  externalMarkdownVersion,
   readOnly = false,
 }: EditorProps) {
+  const editorRef = useRef<MDXEditorMethods>(null);
+
   // B1: Debounce onChange to 300ms
   const debouncedOnChange = useDebouncedCallback(onChange, 300);
 
@@ -69,11 +75,29 @@ export function MdxEditorSlot({
     [gitService]
   );
 
+  // imagePlugin custom: resolve relative paths
+  const imagePluginConfig = useMemo(() => imagePlugin({
+    imageUploadHandler,
+    // Transform image src for display
+    imagePreviewHandler: async (src) => {
+      if (src.startsWith('http')) return src;
+      return imageBaseUrl ? `${imageBaseUrl}${src}` : src;
+    },
+  }), [imageUploadHandler, imageBaseUrl]);
+
+  // L1 fix: sync external markdown when Source tab edits happen
+  useEffect(() => {
+    if (externalMarkdownVersion && externalMarkdown !== undefined) {
+      editorRef.current?.setMarkdown(externalMarkdown);
+    }
+  }, [externalMarkdownVersion, externalMarkdown]);
+
   return (
     // B2: CSS isolation — prevent Tailwind preflight from affecting editor
     <div className="pageel-editor-slot">
       <MDXEditor
-        markdown={value}
+        ref={editorRef}
+        markdown={initialValue}
         onChange={debouncedOnChange}
         readOnly={readOnly}
         plugins={[
@@ -82,7 +106,7 @@ export function MdxEditorSlot({
           quotePlugin(),
           thematicBreakPlugin(),
           linkPlugin(),
-          imagePlugin({ imageUploadHandler }),
+          imagePluginConfig,
           codeBlockPlugin({ defaultCodeBlockLanguage: '' }),
           markdownShortcutPlugin(),
           toolbarPlugin({

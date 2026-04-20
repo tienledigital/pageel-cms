@@ -29,8 +29,8 @@ export interface PageelPlugin {
 // ── Slot Props ──
 
 export interface EditorProps {
-  /** Current markdown content (body only, no frontmatter) */
-  value: string;
+  /** Initial markdown content — set once on mount, NOT controlled */
+  initialValue: string;
   /** Callback when content changes — must emit valid markdown */
   onChange: (markdown: string) => void;
   /** Current frontmatter key-value pairs (read-only for editor) */
@@ -43,6 +43,14 @@ export interface EditorProps {
   locale: string;
   /** Whether editor is in read-only mode */
   readOnly?: boolean;
+  /** Callback to open image gallery picker — returns selected image path or null */
+  onRequestImage?: () => Promise<string | null>;
+  /** Base URL to prepend to relative image paths for display */
+  imageBaseUrl?: string;
+  /** Markdown set by parent (e.g. after Source tab edit). Plugin MUST sync when version changes. (Review L1) */
+  externalMarkdown?: string;
+  /** Change counter — plugin watches this to detect when externalMarkdown needs syncing */
+  externalMarkdownVersion?: number;
 }
 
 export interface ToolbarProps {
