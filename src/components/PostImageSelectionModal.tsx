@@ -181,28 +181,33 @@ const PostImageSelectionModal: React.FC<PostImageSelectionModalProps> = ({
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
             <div className="bg-white rounded-lg shadow-xl border border-notion-border w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
-                <header className="px-4 py-3 border-b border-notion-border flex justify-between items-center bg-white flex-shrink-0">
-                    <h3 className="text-base font-semibold text-notion-text">{t('postList.imageSelection.title')}</h3>
-                    <button onClick={onClose} className="text-notion-muted hover:text-notion-text p-1 rounded-sm hover:bg-notion-hover transition-colors">
+                <header className="px-5 py-3.5 border-b border-notion-border flex justify-between items-center bg-white flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                        <ImageIcon className="w-5 h-5 text-notion-blue" />
+                        <h3 className="text-base font-semibold text-notion-text">{t('postList.imageSelection.title')}</h3>
+                    </div>
+                    <button onClick={onClose} className="text-notion-muted hover:text-notion-text p-1.5 rounded hover:bg-notion-hover transition-colors" title="Close">
                         <CloseIcon className="w-4 h-4" />
                     </button>
                 </header>
 
-                <div className="flex border-b border-notion-border bg-notion-sidebar px-4 pt-2">
+                <div className="flex border-b border-notion-border bg-notion-sidebar px-5 pt-2 gap-1">
                     <button
                         onClick={() => setActiveTab('upload')}
-                        className={`mr-4 pb-2 text-sm font-medium transition-colors border-b-2 ${
+                        className={`flex items-center gap-1.5 pb-2.5 px-3 text-sm font-medium transition-colors border-b-2 ${
                             activeTab === 'upload' ? 'text-notion-text border-notion-text' : 'text-notion-muted border-transparent hover:text-notion-text'
                         }`}
                     >
+                        <UploadIcon className="w-3.5 h-3.5" />
                         {t('postList.imageSelection.tabUpload')}
                     </button>
                     <button
                         onClick={() => setActiveTab('select')}
-                        className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
+                        className={`flex items-center gap-1.5 pb-2.5 px-3 text-sm font-medium transition-colors border-b-2 ${
                             activeTab === 'select' ? 'text-notion-text border-notion-text' : 'text-notion-muted border-transparent hover:text-notion-text'
                         }`}
                     >
+                        <ImageIcon className="w-3.5 h-3.5" />
                         {t('postList.imageSelection.tabSelect')}
                     </button>
                 </div>
@@ -212,19 +217,23 @@ const PostImageSelectionModal: React.FC<PostImageSelectionModalProps> = ({
                         <div className="space-y-4">
                             <div 
                                 onClick={() => fileInputRef.current?.click()}
-                                className="border border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-notion-hover transition-all bg-notion-sidebar"
+                                className="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center cursor-pointer hover:border-notion-blue/50 hover:bg-blue-50/30 transition-all bg-notion-sidebar/50 group"
                             >
                                 {previewUrl ? (
                                     <div className="relative inline-block">
-                                        <img src={previewUrl} alt="Preview" className="max-h-64 rounded-sm shadow-sm border border-notion-border" />
-                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-sm">
-                                            <p className="text-white text-sm font-medium">{t('postList.imageSelection.uploadDesc')}</p>
+                                        <img src={previewUrl} alt="Preview" className="max-h-64 rounded-md shadow-sm border border-notion-border" />
+                                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-md">
+                                            <UploadIcon className="w-6 h-6 text-white mb-1" />
+                                            <p className="text-white text-sm font-medium">Click to replace</p>
                                         </div>
                                     </div>
                                 ) : (
                                     <>
-                                        <UploadIcon className="mx-auto h-8 w-8 text-notion-muted mb-2" />
-                                        <p className="text-notion-text text-sm font-medium">{t('postList.imageSelection.uploadDesc')}</p>
+                                        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-notion-blue/10 flex items-center justify-center group-hover:bg-notion-blue/20 transition-colors">
+                                            <UploadIcon className="h-6 w-6 text-notion-blue" />
+                                        </div>
+                                        <p className="text-notion-text text-sm font-semibold mb-1">{t('postList.imageSelection.uploadDesc')}</p>
+                                        <p className="text-notion-muted text-xs">PNG, JPG, GIF, WebP, SVG</p>
                                     </>
                                 )}
                                 <input 
@@ -312,23 +321,35 @@ const PostImageSelectionModal: React.FC<PostImageSelectionModalProps> = ({
                     )}
                 </div>
 
-                <footer className="px-4 py-3 border-t border-notion-border bg-white flex justify-end gap-2">
-                    <button 
-                        onClick={onClose} 
-                        className="px-3 py-1.5 bg-white border border-notion-border rounded-sm text-notion-text font-medium hover:bg-notion-hover transition-colors text-sm shadow-sm"
-                    >
-                        {t('directoryPicker.cancel')}
-                    </button>
-                    <button
-                        onClick={handleConfirm}
-                        disabled={
-                            (activeTab === 'upload' && !selectedFile) ||
-                            (activeTab === 'select' && !selectedRepoImage)
+                <footer className="px-5 py-3.5 border-t border-notion-border bg-notion-sidebar/30 flex items-center justify-between">
+                    <p className="text-xs text-notion-muted">
+                        {activeTab === 'upload' 
+                            ? (selectedFile ? `📎 ${selectedFile.name}` : 'No file selected') 
+                            : (selectedRepoImage ? `✓ ${selectedRepoImage.split('/').pop()}` : 'No image selected')
                         }
-                        className="px-4 py-1.5 bg-notion-blue text-white font-medium rounded-sm hover:bg-blue-600 transition-all text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {activeTab === 'upload' ? t('postList.imageSelection.tabUpload') : 'Select Image'}
-                    </button>
+                    </p>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={onClose} 
+                            className="px-4 py-2 bg-white border border-notion-border rounded-md text-notion-text font-medium hover:bg-notion-hover transition-colors text-sm shadow-sm"
+                        >
+                            {t('directoryPicker.cancel')}
+                        </button>
+                        <button
+                            onClick={handleConfirm}
+                            disabled={
+                                (activeTab === 'upload' && !selectedFile) ||
+                                (activeTab === 'select' && !selectedRepoImage)
+                            }
+                            className="px-5 py-2 bg-notion-blue text-white font-medium rounded-md hover:bg-blue-600 transition-all text-sm shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                        >
+                            {activeTab === 'upload' ? (
+                                <><UploadIcon className="w-3.5 h-3.5" /> Upload &amp; Use</>
+                            ) : (
+                                <><CheckCircleIcon className="w-3.5 h-3.5" /> Use Selected</>
+                            )}
+                        </button>
+                    </div>
                 </footer>
             </div>
         </div>
