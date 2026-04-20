@@ -102,7 +102,9 @@ export async function listFiles(config: GitClientConfig, path: string) {
 }
 
 export async function getFileContent(config: GitClientConfig, path: string) {
-  const data = await apiCall(config, `${repoPath(config)}/contents/${path}`);
+  const cacheBuster = `_t=${Date.now()}`;
+  const querySymbol = path.includes('?') ? '&' : '?';
+  const data = await apiCall(config, `${repoPath(config)}/contents/${path}${querySymbol}${cacheBuster}`);
   if (data.content && data.encoding === 'base64') {
     const binary = atob(data.content.replace(/\n/g, ''));
     const bytes = new Uint8Array(binary.length);
