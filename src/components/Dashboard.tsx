@@ -95,6 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     handleAction,
     fetchStats,
     pluginConfig,
+    setPluginConfig,
   } = useDashboardInit({ gitService, repo });
 
   const {
