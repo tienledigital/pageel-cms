@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { GithubUser, GithubRepo, AppSettings } from '../types';
+import type { PluginConfig } from '../plugins';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ToggleSwitch } from './ToggleSwitch';
@@ -30,6 +31,8 @@ interface SettingsViewProps {
     onFileImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
     importStatus: { type: 'success' | 'error', message: string } | null;
     onOpenPicker: (type: 'posts' | 'images') => void;
+    pluginConfig: PluginConfig;
+    setPluginConfig: (config: PluginConfig) => void;
 }
 
 const SettingRow: React.FC<{ label: string, description?: string, children: React.ReactNode }> = ({ label, description, children }) => (
@@ -65,10 +68,39 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     fileInputRef,
     onFileImport,
     importStatus,
-    onOpenPicker
+    onOpenPicker,
+    pluginConfig,
+    setPluginConfig
 }) => {
     const { t } = useI18n();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isTogglingPlugin, setIsTogglingPlugin] = useState(false);
+
+    const handleWysiwygToggle = async (enabled: boolean) => {
+        setIsTogglingPlugin(true);
+        try {
+            const payload = { editor: enabled ? '@pageel/plugin-mdx' : null };
+            const res = await fetch('/api/settings/plugins', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.config && data.config.plugins) {
+                    setPluginConfig({ plugins: data.config.plugins });
+                } else if (data.config) {
+                    setPluginConfig({ plugins: {} });
+                }
+            } else {
+                console.error('Failed to update plugin config');
+            }
+        } catch (err) {
+            console.error('Error toggling WYSIWYG', err);
+        } finally {
+            setIsTogglingPlugin(false);
+        }
+    };
 
     return (
         <div className="pb-20">
@@ -200,6 +232,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {/* --- System Config --- */}
                 <SectionHeader title={t('dashboard.settings.system.title')} icon={<SettingsIcon className="w-4 h-4" />} />
                 <div className="divide-y divide-notion-border border-t border-notion-border">
+                    <SettingRow 
+                        label="WYSIWYG Editor Plugin" 
+                        description="Enable the visual MDX Editor for writing posts. Disable to use standard raw Markdown textarea."
+                    >
+                        <div className="flex items-center gap-3">
+                            {isTogglingPlugin && <SpinnerIcon className="w-4 h-4 animate-spin text-notion-muted" />}
+                            <ToggleSwitch 
+                                checked={!!pluginConfig?.plugins?.editor} 
+                                onChange={handleWysiwygToggle} 
+                            />
+                        </div>
+                    </SettingRow>
+
                     <SettingRow label={t('dashboard.settings.system.languageLabel')}>
                         <LanguageSwitcher />
                     </SettingRow>

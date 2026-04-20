@@ -55,6 +55,7 @@ interface UseDashboardInitReturn {
   
   // Plugin config (from .pageelrc.json)
   pluginConfig: PluginConfig;
+  setPluginConfig: React.Dispatch<React.SetStateAction<PluginConfig>>;
 }
 
 export function useDashboardInit({ gitService, repo }: UseDashboardInitParams): UseDashboardInitReturn {
@@ -388,5 +389,6 @@ export function useDashboardInit({ gitService, repo }: UseDashboardInitParams): 
     handleAction,
     fetchStats,
     pluginConfig,
+    setPluginConfig,
   };
 }

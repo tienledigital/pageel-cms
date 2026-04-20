@@ -304,23 +304,25 @@ const Dashboard: React.FC<DashboardProps> = ({
         );
       case "settings":
         return (
-          <SettingsView
-            settings={settings}
-            onSettingsChange={handleSettingsChange}
-            onSave={handleSaveSettings}
-            isSaving={isSaving}
-            saveSuccess={saveSuccess}
-            user={user}
-            repo={currentRepo}
-            onLogout={onLogout}
-            onDeleteConfig={handleDeleteConfig}
-            onExport={handleExportSettings}
-            onImportClick={handleImportClick}
-            fileInputRef={importFileInputRef}
-            onFileImport={handleFileImport}
-            importStatus={importExportStatus}
-            onOpenPicker={(type) => setIsPickerOpen(type)}
-          />
+            <SettingsView
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+              onSave={handleSaveSettings}
+              isSaving={isSaving}
+              saveSuccess={saveSuccess}
+              user={user}
+              repo={currentRepo}
+              onLogout={onLogout}
+              onDeleteConfig={handleDeleteConfig}
+              onExport={handleExportSettings}
+              onImportClick={handleImportClick}
+              fileInputRef={importFileInputRef}
+              onFileImport={handleFileImport}
+              importStatus={importExportStatus}
+              onOpenPicker={(type) => setIsPickerOpen(type)}
+              pluginConfig={pluginConfig}
+              setPluginConfig={setPluginConfig}
+            />
         );
       default:
         return null;
