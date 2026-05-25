@@ -12,8 +12,36 @@ export const BLOCKED_PATHS = [
   /\.(ts|tsx|js|jsx|mjs|cjs|sh|yml|yaml|toml)$/i,    // Code files
 ];
 
+export function normalizePath(path: string): string {
+  // Convert backslashes to forward slashes, and split
+  const segments = path.replace(/\\/g, '/').split('/');
+  const stack: string[] = [];
+
+  for (const segment of segments) {
+    if (segment === '' || segment === '.') {
+      continue;
+    }
+    if (segment === '..') {
+      if (stack.length > 0 && stack[stack.length - 1] !== '..') {
+        stack.pop();
+      } else {
+        stack.push('..');
+      }
+    } else {
+      stack.push(segment);
+    }
+  }
+  return stack.join('/');
+}
+
 export function isPathAllowed(path: string): boolean {
-  const normalizedPath = path.replace(/^\/+/, '');
+  const normalizedPath = normalizePath(path);
+  
+  // Block any path traversal attempts going outside the repository root
+  if (normalizedPath.startsWith('../') || normalizedPath === '..') {
+    return false;
+  }
+  
   return !BLOCKED_PATHS.some(pattern => pattern.test(normalizedPath));
 }
 
