@@ -96,19 +96,37 @@ jobs:
       # Publish in dependency order with provenance
       - name: Publish @pageel/plugin-types
         if: ${{ github.event.inputs.dry_run != 'true' }}
-        run: npm publish -w packages/plugin-types --provenance --access public --tag beta
+        run: |
+          CURRENT_VERSION=$(node -p "require('./packages/plugin-types/package.json').version")
+          if npm info @pageel/plugin-types@$CURRENT_VERSION >/dev/null 2>&1; then
+            echo "⚠️ @pageel/plugin-types@$CURRENT_VERSION is already published. Skipping."
+          else
+            npm publish -w packages/plugin-types --provenance --access public --tag beta
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @pageel/plugin-mdx
         if: ${{ github.event.inputs.dry_run != 'true' }}
-        run: npm publish -w packages/plugin-mdx --provenance --access public --tag beta
+        run: |
+          CURRENT_VERSION=$(node -p "require('./packages/plugin-mdx/package.json').version")
+          if npm info @pageel/plugin-mdx@$CURRENT_VERSION >/dev/null 2>&1; then
+            echo "⚠️ @pageel/plugin-mdx@$CURRENT_VERSION is already published. Skipping."
+          else
+            npm publish -w packages/plugin-mdx --provenance --access public --tag beta
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @pageel/cms
         if: ${{ github.event.inputs.dry_run != 'true' }}
-        run: npm publish -w packages/cms-bridge --provenance --access public --tag beta
+        run: |
+          CURRENT_VERSION=$(node -p "require('./packages/cms-bridge/package.json').version")
+          if npm info @pageel/cms@$CURRENT_VERSION >/dev/null 2>&1; then
+            echo "⚠️ @pageel/cms@$CURRENT_VERSION is already published. Skipping."
+          else
+            npm publish -w packages/cms-bridge --provenance --access public --tag beta
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
