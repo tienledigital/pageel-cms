@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.1] - 2026-06-18
+
+### Added
+
+- **Context-Aware Path Validation**: Implemented security context filtering (blob, cms-read, cms-write) to allow CMS reads and writes in specific content directories (`src/content/`, `src/data/`, `src/assets/`) while blocking execution-capable code extensions (`.ts`, `.tsx`, `.js`, `.jsx`, etc.).
+- **URL Encoding Normalization**: Integrated mandatory path decoding before path checking to mitigate potential URL-encoded bypasses.
+- **Access Violation Logging**: Integrated server-side warning logs when path access is blocked.
+- **Unit Testing Suite**: Created root-level `test/proxy-utils.test.ts` covering 17 distinct validation and traversal scenarios, achieving 100% path validation logic branch coverage.
+
+### Fixed
+
+- **BUG-403**: Fixed Git proxy blocking CMS content directory reads (403 Forbidden).
+- **TypeScript Type Warnings**: Resolved static type check issues in `I18nContext` and `ImageList`.
+
+---
+
 ## [2.1.0] - 2026-04-22
 
 ### Added
@@ -289,6 +305,7 @@ First public release of Pageel CMS - a Git-based CMS for static & hybrid website
 
 ---
 
+[2.1.1]: https://github.com/pageel/pageel-cms/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/pageel/pageel-cms/compare/v2.1.0-beta.1...v2.1.0
 [2.1.0-beta.1]: https://github.com/pageel/pageel-cms/compare/v2.0.1...v2.1.0-beta.1
 [2.0.1]: https://github.com/pageel/pageel-cms/compare/v2.0.0...v2.0.1
