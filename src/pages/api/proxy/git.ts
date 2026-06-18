@@ -85,7 +85,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         );
       }
 
-      if (!isPathAllowed(path)) {
+      const isWriteAction = PATH_REQUIRED_ACTIONS.has(action);
+      const context = isWriteAction ? 'cms-write' : 'cms-read';
+
+      if (!isPathAllowed(path, context)) {
+        console.warn(`[proxy/git] Path blocked: action="${action}" path="${path}" context="${context}"`);
         return new Response(
           JSON.stringify({ error: `Path "${path}" is not allowed` }),
           { status: 403, headers: { 'Content-Type': 'application/json' } }
