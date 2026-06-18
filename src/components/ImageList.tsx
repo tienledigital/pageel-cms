@@ -328,7 +328,7 @@ const ImageList: React.FC<ImageListProps> = ({
                 onClose={() => setImageToDelete(null)}
                 onConfirm={confirmDelete}
                 title={t('imageList.delete')}
-                description={t('imageList.deleteConfirm', { name: imageToDelete?.name })}
+                description={t('imageList.deleteConfirm', { name: imageToDelete?.name || '' })}
                 confirmLabel={t('imageList.delete')}
                 isProcessing={isDeleting}
             />

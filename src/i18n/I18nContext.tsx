@@ -37,14 +37,16 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
       text = getNestedTranslation(translations['en'], key) || key;
     }
 
+    let resultText: string = text;
+
     if (options) {
       Object.keys(options).forEach(optKey => {
         const regex = new RegExp(`{{${optKey}}}`, 'g');
-        text = text.replace(regex, String(options[optKey]));
+        resultText = resultText.replace(regex, String(options[optKey]));
       });
     }
 
-    return text;
+    return resultText;
   }, [language]);
 
 

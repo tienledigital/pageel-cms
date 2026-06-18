@@ -1,15 +1,30 @@
 import { getFileAsBlob, createGitConfig } from './git-client';
 import { resolveGitCredentials, verifySession } from './session';
 
-export const BLOCKED_PATHS = [
+export type PathContext = 'blob' | 'cms-read' | 'cms-write';
+
+const UNIVERSAL_BLOCKED: RegExp[] = [
   /^\.\.\//,                                         // Path traversal
   /^\.\//,                                           // Relative paths
-  /^\.env/,                                          // Config files
-  /^\.github\//,                                     // CI/CD
-  /^\.git\//,                                        // Git internals
-  /^src\//,                                          // Source code
-  /^node_modules\//,                                 // Dependencies
-  /\.(ts|tsx|js|jsx|mjs|cjs|sh|yml|yaml|toml)$/i,    // Code files
+  /^\.env/i,                                         // Environment secrets
+  /^\.git\//i,                                       // Git internals
+  /^node_modules\//i,                                // Dependencies
+];
+
+const SOURCE_BLOCKED: RegExp[] = [
+  /^\.github\//i,                                    // CI/CD configs
+  /^src\//i,                                         // All source code
+  /\.(ts|tsx|js|jsx|mjs|cjs|sh|yml|yaml|toml)$/i,    // Code/config file extensions
+];
+
+const CMS_CONTENT_ALLOWED: RegExp[] = [
+  /^src\/content(\/|$)/i,                            // Astro content collections
+  /^src\/data(\/|$)/i,                               // Astro Content Layer (v5+)
+  /^src\/assets(\/|$)/i,                             // Astro optimized assets
+];
+
+const CODE_EXTENSIONS_BLOCKED: RegExp[] = [
+  /\.(ts|tsx|js|jsx|mjs|cjs|sh)$/i,                  // Execution-capable script extensions
 ];
 
 export function normalizePath(path: string): string {
@@ -34,15 +49,45 @@ export function normalizePath(path: string): string {
   return stack.join('/');
 }
 
-export function isPathAllowed(path: string): boolean {
-  const normalizedPath = normalizePath(path);
+export function isPathAllowed(path: string, context: PathContext = 'blob'): boolean {
+  let decodedPath = path;
+  try {
+    decodedPath = decodeURIComponent(path);
+  } catch (e) {
+    // If decode fails, use original path
+  }
+
+  const normalizedPath = normalizePath(decodedPath);
   
   // Block any path traversal attempts going outside the repository root
   if (normalizedPath.startsWith('../') || normalizedPath === '..') {
     return false;
   }
   
-  return !BLOCKED_PATHS.some(pattern => pattern.test(normalizedPath));
+  // Universal blocks apply to ALL contexts
+  if (UNIVERSAL_BLOCKED.some(pattern => pattern.test(normalizedPath))) {
+    return false;
+  }
+  
+  switch (context) {
+    case 'blob':
+      // Strictest — original behavior, blocks all src/ and code/config extensions
+      return !SOURCE_BLOCKED.some(pattern => pattern.test(normalizedPath));
+      
+    case 'cms-read':
+      // Allow reading from content directories BUT block code file extensions
+      if (CMS_CONTENT_ALLOWED.some(pattern => pattern.test(normalizedPath))) {
+        return !CODE_EXTENSIONS_BLOCKED.some(pattern => pattern.test(normalizedPath));
+      }
+      return !SOURCE_BLOCKED.some(pattern => pattern.test(normalizedPath));
+      
+    case 'cms-write':
+      // Allow writing to content dirs BUT block code file extensions
+      if (CMS_CONTENT_ALLOWED.some(pattern => pattern.test(normalizedPath))) {
+        return !CODE_EXTENSIONS_BLOCKED.some(pattern => pattern.test(normalizedPath));
+      }
+      return !SOURCE_BLOCKED.some(pattern => pattern.test(normalizedPath));
+  }
 }
 
 const MIME_TYPES: Record<string, string> = {
