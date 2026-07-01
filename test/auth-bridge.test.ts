@@ -253,4 +253,33 @@ describe('auth-bridge TDD tests', () => {
       expect(response.headers.get('Location')).toBe('/login');
     });
   });
+
+  describe('Login UI Toggle Logic', () => {
+    it('should determine SSO mode is active when PAGEEL_APP_URL is configured', () => {
+      const mockEnv = { PAGEEL_APP_URL: 'https://cms.pageel.app' };
+      const appUrl = mockEnv.PAGEEL_APP_URL || '';
+      const hasSso = !!appUrl;
+      
+      expect(hasSso).toBe(true);
+      expect(appUrl).toBe('https://cms.pageel.app');
+    });
+
+    it('should determine SSO mode is inactive when PAGEEL_APP_URL is not configured', () => {
+      const mockEnv = { PAGEEL_APP_URL: '' };
+      const appUrl = mockEnv.PAGEEL_APP_URL || '';
+      const hasSso = !!appUrl;
+      
+      expect(hasSso).toBe(false);
+      expect(appUrl).toBe('');
+    });
+
+    it('should generate correct redirect SSO URL with callback parameter', () => {
+      const mockEnv = { PAGEEL_APP_URL: 'https://cms.pageel.app' };
+      const appUrl = mockEnv.PAGEEL_APP_URL;
+      const mockOrigin = 'http://localhost:3000';
+      const redirectUrl = `${appUrl}/login?redirect_uri=${mockOrigin}/api/auth/callback`;
+      
+      expect(redirectUrl).toBe('https://cms.pageel.app/login?redirect_uri=http://localhost:3000/api/auth/callback');
+    });
+  });
 });

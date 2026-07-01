@@ -17,6 +17,10 @@ const error = Astro.url.searchParams.get('error') || '';
 const envGitConfigured = hasEnvGitConfig();
 // Check if server has hardcoded auth credentials
 const envAuthConfigured = hasEnvAuth();
+
+// Resolve PAGEEL_APP_URL from env or platform context
+const appUrl = (typeof process !== 'undefined' ? process.env.PAGEEL_APP_URL : '') || import.meta.env.PAGEEL_APP_URL || (Astro.locals as any)?.runtime?.env?.PAGEEL_APP_URL || '';
+const hasSso = !!appUrl;
 ---
 
 <!DOCTYPE html>
@@ -223,6 +227,30 @@ const envAuthConfigured = hasEnvAuth();
       background: #dbeafe;
       color: #1e40af;
     }
+
+    .sso-button {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 0.6rem;
+      background: #FF5D01;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      border: none;
+    }
+
+    .sso-button:hover {
+      background: #e04f00;
+    }
+
+    .sso-button:active {
+      transform: scale(0.99);
+    }
   </style>
 </head>
 <body>
@@ -235,7 +263,9 @@ const envAuthConfigured = hasEnvAuth();
       </div>
       <h1>
         Pageel CMS
-        {envGitConfigured
+        {hasSso
+          ? <span class="mode-badge mode-env" style="background: #ffebd8; color: #b24100;">App</span>
+          : envGitConfigured
           ? <span class="mode-badge mode-env">Server</span>
           : <span class="mode-badge mode-dynamic">Connect</span>
         }
@@ -246,52 +276,65 @@ const envAuthConfigured = hasEnvAuth();
     <div class="form-card">
       {error && <div class="error-msg">{error}</div>}
       
-      <form method="POST" action="/api/auth/login">
-        {!envGitConfigured && (
-          <>
-            <div class="field">
-              <label for="repo">Repository</label>
-              <input type="text" id="repo" name="repo" placeholder="owner/repo" required />
-              <p class="help-text">GitHub repository (e.g. myuser/my-blog)</p>
-            </div>
-            <div class="field">
-              <label for="token">GitHub Token</label>
-              <input type="password" id="token" name="token" placeholder="ghp_..." required />
-              <p class="help-text">Personal Access Token with repo scope</p>
-            </div>
-            <div class="divider"><span>Credentials</span></div>
-          </>
-        )}
-        {envAuthConfigured ? (
-          <>
-            <div class="field">
-              <label for="username">Username</label>
-              <input type="text" id="username" name="username" required autocomplete="username" autofocus />
-            </div>
-            <div class="field">
-              <label for="password">Password</label>
-              <input type="password" id="password" name="password" required autocomplete="current-password" />
-            </div>
-          </>
-        ) : (
-          <>
-            <div class="field disabled">
-              <label for="username">Username</label>
-              <input type="text" id="username" name="username" disabled placeholder="Not required (Open Mode)" />
-            </div>
-            <div class="field disabled">
-              <label for="password">Password</label>
-              <input type="password" id="password" name="password" disabled placeholder="Not required (Open Mode)" />
-            </div>
-          </>
-        )}
-        <button type="submit">{envAuthConfigured ? 'Sign In' : 'Connect'}</button>
-      </form>
+      {hasSso ? (
+        <!-- @para-doc [#csa-cms-app-int-opt-in] -->
+        <div class="sso-section">
+          <p style="font-size: 0.85rem; color: #555; text-align: center; margin-bottom: 1.25rem; line-height: 1.45;">
+            SSO Mode is active. You will be redirected to Pageel App for authentication.
+          </p>
+          <!-- @para-doc [#csa-cms-app-int-button] -->
+          <a href={`${appUrl}/login?redirect_uri=${Astro.url.origin}/api/auth/callback`} class="sso-button">
+            Sign In with Pageel App
+          </a>
+        </div>
+      ) : (
+        <form method="POST" action="/api/auth/login">
+          {!envGitConfigured && (
+            <>
+              <div class="field">
+                <label for="repo">Repository</label>
+                <input type="text" id="repo" name="repo" placeholder="owner/repo" required />
+                <p class="help-text">GitHub repository (e.g. myuser/my-blog)</p>
+              </div>
+              <div class="field">
+                <label for="token">GitHub Token</label>
+                <input type="password" id="token" name="token" placeholder="ghp_..." required />
+                <p class="help-text">Personal Access Token with repo scope</p>
+              </div>
+              <div class="divider"><span>Credentials</span></div>
+            </>
+          )}
+          {envAuthConfigured ? (
+            <>
+              <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autocomplete="username" autofocus />
+              </div>
+              <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div class="field disabled">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" disabled placeholder="Not required (Open Mode)" />
+              </div>
+              <div class="field disabled">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" disabled placeholder="Not required (Open Mode)" />
+              </div>
+            </>
+          )}
+          <button type="submit">{envAuthConfigured ? 'Sign In' : 'Connect'}</button>
+        </form>
+      )}
     </div>
 
     <div class="footer">
       <a href="https://github.com/pageel/pageel-cms" target="_blank">Pageel CMS</a>
-      {envGitConfigured ? ' — Server Mode' : envAuthConfigured ? ' — Connect Mode' : ' — Open Mode'}
+      {hasSso ? ' — App Mode' : envGitConfigured ? ' — Server Mode' : envAuthConfigured ? ' — Connect Mode' : ' — Open Mode'}
     </div>
   </div>
 </body>

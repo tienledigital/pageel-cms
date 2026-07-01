@@ -1,5 +1,7 @@
 // @para-doc [#csa-cms-app-int-binding]
 // @para-doc [#csa-cms-app-int-test-mode]
+// @para-doc [#csa-cms-app-int-opt-in]
+// @para-doc [#csa-cms-app-int-button]
 import type { BridgeVerificationResponse } from '../types/auth';
 
 /**
