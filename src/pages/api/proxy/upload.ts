@@ -43,6 +43,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
+    // @para-doc [#csa-cms-path-val-upload-proxy-caller]
     if (!isPathAllowed(path)) {
       return new Response(
         JSON.stringify({ error: `Upload path "${path}" is not allowed` }),

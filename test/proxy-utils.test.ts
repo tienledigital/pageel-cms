@@ -24,6 +24,7 @@ describe('getMimeType', () => {
   });
 });
 
+// @para-doc [#csa-cms-path-val-unit-tests]
 describe('isPathAllowed', () => {
   describe('blob context (strictest/default)', () => {
     it('should allow public fallback paths', () => {

@@ -88,6 +88,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const isWriteAction = PATH_REQUIRED_ACTIONS.has(action);
       const context = isWriteAction ? 'cms-write' : 'cms-read';
 
+      // @para-doc [#csa-cms-path-val-git-proxy-caller]
       if (!isPathAllowed(path, context)) {
         console.warn(`[proxy/git] Path blocked: action="${action}" path="${path}" context="${context}"`);
         return new Response(
