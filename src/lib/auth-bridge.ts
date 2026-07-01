@@ -73,5 +73,6 @@ export async function logoutAppSession(token: string, env: any): Promise<boolean
 // @para-doc [#csa-cms-app-int-opt-in]
 // @para-doc [#csa-cms-app-int-button]
 export function getSsoRedirectUrl(appUrl: string, origin: string): string {
-  return `${appUrl}/login?redirect_uri=${origin}/api/auth/callback`;
+  const cleanAppUrl = appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl;
+  return `${cleanAppUrl}/login?redirect_uri=${origin}/api/auth/callback`;
 }

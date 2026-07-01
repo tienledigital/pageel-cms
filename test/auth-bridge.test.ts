@@ -275,11 +275,14 @@ describe('auth-bridge TDD tests', () => {
 
     it('should generate correct redirect SSO URL with callback parameter', () => {
       const mockEnv = { PAGEEL_APP_URL: 'https://cms.pageel.app' };
-      const appUrl = mockEnv.PAGEEL_APP_URL;
+      const mockEnvWithSlash = { PAGEEL_APP_URL: 'https://cms.pageel.app/' };
       const mockOrigin = 'http://localhost:3000';
-      const redirectUrl = getSsoRedirectUrl(appUrl, mockOrigin);
+      
+      const redirectUrl = getSsoRedirectUrl(mockEnv.PAGEEL_APP_URL, mockOrigin);
+      const redirectUrlWithSlash = getSsoRedirectUrl(mockEnvWithSlash.PAGEEL_APP_URL, mockOrigin);
       
       expect(redirectUrl).toBe('https://cms.pageel.app/login?redirect_uri=http://localhost:3000/api/auth/callback');
+      expect(redirectUrlWithSlash).toBe('https://cms.pageel.app/login?redirect_uri=http://localhost:3000/api/auth/callback');
     });
   });
 });
