@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.0] - 2026-07-01
+
+### Added
+
+- **SSO Integration with Pageel App**: Implemented client-to-app handshake and SSO callback mechanism.
+  - Added secure GET `/api/auth/callback` callback route verifying SaaS JWT with 5s timeout.
+  - Implemented Cloudflare Service Binding routing with standard HTTP fetch fallback.
+  - Implemented secure POST `/api/auth/logout` clearing local session cookie and safely calling remote logout API.
+- **SSO Login UI Toggle**: Configured `login.astro` to detect `PAGEEL_APP_URL` env variable, toggle off local credential fields, and render a dedicated "Sign In with Pageel App" button redirecting users to the SaaS application.
+- **Double-Binding Spec Coverage**: Bound all SSO module elements to the new specifications, achieving 100% project-wide CSA spec coverage.
+- **Integration Test Suite**: Added 7 integration tests in `test/auth-bridge.test.ts` verifying UI redirects, JWT callbacks, cookie options (SameSite=Lax), and remote logout scenarios.
+
+---
+
 ## [2.1.1] - 2026-06-18
 
 ### Added
@@ -305,6 +319,7 @@ First public release of Pageel CMS - a Git-based CMS for static & hybrid website
 
 ---
 
+[2.2.0]: https://github.com/pageel/pageel-cms/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/pageel/pageel-cms/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/pageel/pageel-cms/compare/v2.1.0-beta.1...v2.1.0
 [2.1.0-beta.1]: https://github.com/pageel/pageel-cms/compare/v2.0.1...v2.1.0-beta.1

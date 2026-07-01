@@ -1,5 +1,6 @@
 ---
 import { verifySession, hasEnvGitConfig, hasEnvAuth } from '../lib/session';
+import { getSsoRedirectUrl } from '../lib/auth-bridge';
 
 // If already authenticated, redirect to CMS
 const sessionCookie = Astro.cookies.get('pageel_session')?.value;
@@ -21,6 +22,7 @@ const envAuthConfigured = hasEnvAuth();
 // Resolve PAGEEL_APP_URL from env or platform context
 const appUrl = (typeof process !== 'undefined' ? process.env.PAGEEL_APP_URL : '') || import.meta.env.PAGEEL_APP_URL || (Astro.locals as any)?.runtime?.env?.PAGEEL_APP_URL || '';
 const hasSso = !!appUrl;
+const ssoRedirectUrl = hasSso ? getSsoRedirectUrl(appUrl, Astro.url.origin) : '';
 ---
 
 <!DOCTYPE html>
@@ -283,7 +285,7 @@ const hasSso = !!appUrl;
             SSO Mode is active. You will be redirected to Pageel App for authentication.
           </p>
           <!-- @para-doc [#csa-cms-app-int-button] -->
-          <a href={`${appUrl}/login?redirect_uri=${Astro.url.origin}/api/auth/callback`} class="sso-button">
+          <a href={ssoRedirectUrl} class="sso-button">
             Sign In with Pageel App
           </a>
         </div>

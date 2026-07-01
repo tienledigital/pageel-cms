@@ -1,7 +1,3 @@
-// @para-doc [#csa-cms-app-int-binding]
-// @para-doc [#csa-cms-app-int-test-mode]
-// @para-doc [#csa-cms-app-int-opt-in]
-// @para-doc [#csa-cms-app-int-button]
 import type { BridgeVerificationResponse } from '../types/auth';
 
 /**
@@ -26,6 +22,8 @@ async function fetchWithTimeout(url: string, options: RequestInit, binding?: any
 /**
  * Verify JWT token from SaaS app
  */
+// @para-doc [#csa-cms-app-int-binding]
+// @para-doc [#csa-cms-app-int-test-mode]
 export async function verifyAppToken(token: string, env: any): Promise<BridgeVerificationResponse> {
   const appUrl = env.PAGEEL_APP_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_APP_URL : '') || 'https://cms.pageel.app';
   const binding = env.PAGEEL_APP_BINDING;
@@ -67,4 +65,13 @@ export async function logoutAppSession(token: string, env: any): Promise<boolean
   } catch {
     return false;
   }
+}
+
+/**
+ * Generate absolute redirect URL to Pageel App login page
+ */
+// @para-doc [#csa-cms-app-int-opt-in]
+// @para-doc [#csa-cms-app-int-button]
+export function getSsoRedirectUrl(appUrl: string, origin: string): string {
+  return `${appUrl}/login?redirect_uri=${origin}/api/auth/callback`;
 }

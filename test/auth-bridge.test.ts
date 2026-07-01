@@ -1,6 +1,6 @@
 // @para-doc [#csa-cms-app-int-test-mode]
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { verifyAppToken, logoutAppSession } from '../src/lib/auth-bridge';
+import { verifyAppToken, logoutAppSession, getSsoRedirectUrl } from '../src/lib/auth-bridge';
 import { createSession } from '../src/lib/session';
 
 // Import endpoints (will fail RED stage until files are created)
@@ -277,7 +277,7 @@ describe('auth-bridge TDD tests', () => {
       const mockEnv = { PAGEEL_APP_URL: 'https://cms.pageel.app' };
       const appUrl = mockEnv.PAGEEL_APP_URL;
       const mockOrigin = 'http://localhost:3000';
-      const redirectUrl = `${appUrl}/login?redirect_uri=${mockOrigin}/api/auth/callback`;
+      const redirectUrl = getSsoRedirectUrl(appUrl, mockOrigin);
       
       expect(redirectUrl).toBe('https://cms.pageel.app/login?redirect_uri=http://localhost:3000/api/auth/callback');
     });
