@@ -41,7 +41,7 @@ describe('auth-bridge TDD tests', () => {
 
       const result = await verifyAppToken(token, {});
 
-      expect(fetchMock).toHaveBeenCalledWith(`${mockWorkerUrl}/api/verify-bridge`, expect.objectContaining({
+      expect(fetchMock).toHaveBeenCalledWith(`${mockWorkerUrl}/api/auth/verify-bridge`, expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -65,7 +65,7 @@ describe('auth-bridge TDD tests', () => {
 
       const result = await verifyAppToken(token, { PAGEEL_APP_BINDING: mockBinding });
 
-      expect(mockBinding.fetch).toHaveBeenCalledWith('https://api.pageel.app/api/verify-bridge', expect.objectContaining({
+      expect(mockBinding.fetch).toHaveBeenCalledWith('https://api.pageel.app/api/auth/verify-bridge', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),

@@ -20,16 +20,38 @@ async function fetchWithTimeout(url: string, options: RequestInit, binding?: any
 }
 
 /**
+ * Resolve Worker URL adhering to OSS standards:
+ * - Use explicit config if available
+ * - Throw error in Production if missing
+ * - Fallback to localhost in Development
+ */
+export function getWorkerUrl(env: any): string {
+  const configured = env.PAGEEL_WORKER_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_WORKER_URL : '') || env.PAGEEL_APP_URL;
+  if (configured) return configured;
+  
+  // Try to determine if we are in production.
+  // Astro uses import.meta.env, but we also check process.env for robust fallback.
+  const isProd = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD) || 
+                 (typeof process !== 'undefined' && process.env.NODE_ENV === 'production');
+                 
+  if (isProd) {
+    throw new Error('PAGEEL_WORKER_URL environment variable is required in production for SSO authentication.');
+  }
+  
+  return 'http://localhost:8787';
+}
+
+/**
  * Verify JWT token from SaaS app
  */
 // @para-doc [#csa-cms-app-int-binding]
 // @para-doc [#csa-cms-app-int-test-mode]
 export async function verifyAppToken(token: string, env: any): Promise<BridgeVerificationResponse> {
-  const workerUrl = env.PAGEEL_WORKER_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_WORKER_URL : '') || env.PAGEEL_APP_URL || 'https://api.pageel.app';
+  const workerUrl = getWorkerUrl(env);
   const binding = env.PAGEEL_APP_BINDING;
 
   // Endpoint to call
-  const url = `${workerUrl}/api/verify-bridge`;
+  const url = `${workerUrl}/api/auth/verify-bridge`;
 
   const response = await fetchWithTimeout(url, {
     method: 'POST',
@@ -48,7 +70,7 @@ export async function verifyAppToken(token: string, env: any): Promise<BridgeVer
  * Logout session from SaaS app
  */
 export async function logoutAppSession(token: string, env: any): Promise<boolean> {
-  const workerUrl = env.PAGEEL_WORKER_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_WORKER_URL : '') || env.PAGEEL_APP_URL || 'https://api.pageel.app';
+  const workerUrl = getWorkerUrl(env);
   const binding = env.PAGEEL_APP_BINDING;
 
   // Endpoint to call
