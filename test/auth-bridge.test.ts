@@ -281,8 +281,8 @@ describe('auth-bridge TDD tests', () => {
       const redirectUrl = getSsoRedirectUrl(mockEnv.PAGEEL_APP_URL, mockOrigin);
       const redirectUrlWithSlash = getSsoRedirectUrl(mockEnvWithSlash.PAGEEL_APP_URL, mockOrigin);
       
-      expect(redirectUrl).toBe('https://cms.pageel.app/login?redirect_uri=http://localhost:3000/api/auth/callback');
-      expect(redirectUrlWithSlash).toBe('https://cms.pageel.app/login?redirect_uri=http://localhost:3000/api/auth/callback');
+      expect(redirectUrl).toBe('https://cms.pageel.app/api/auth/bridge?return_url=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback');
+      expect(redirectUrlWithSlash).toBe('https://cms.pageel.app/api/auth/bridge?return_url=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback');
     });
   });
 });
