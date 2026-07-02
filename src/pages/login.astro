@@ -19,10 +19,10 @@ const envGitConfigured = hasEnvGitConfig();
 // Check if server has hardcoded auth credentials
 const envAuthConfigured = hasEnvAuth();
 
-// Resolve PAGEEL_APP_URL from env or platform context
-const appUrl = (typeof process !== 'undefined' ? process.env.PAGEEL_APP_URL : '') || import.meta.env.PAGEEL_APP_URL || (Astro.locals as any)?.runtime?.env?.PAGEEL_APP_URL || '';
-const hasSso = !!appUrl;
-const ssoRedirectUrl = hasSso ? getSsoRedirectUrl(appUrl, Astro.url.origin) : '';
+// Resolve PAGEEL_WORKER_URL (Worker API) for SSO bridge redirect
+const workerUrl = (typeof process !== 'undefined' ? process.env.PAGEEL_WORKER_URL : '') || import.meta.env.PAGEEL_WORKER_URL || (Astro.locals as any)?.runtime?.env?.PAGEEL_WORKER_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_APP_URL : '') || import.meta.env.PAGEEL_APP_URL || (Astro.locals as any)?.runtime?.env?.PAGEEL_APP_URL || '';
+const hasSso = !!workerUrl;
+const ssoRedirectUrl = hasSso ? getSsoRedirectUrl(workerUrl, Astro.url.origin) : '';
 ---
 
 <!DOCTYPE html>

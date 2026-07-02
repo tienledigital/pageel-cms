@@ -11,10 +11,10 @@ import { POST as handleLogout } from '../src/pages/api/auth/logout';
 
 describe('auth-bridge TDD tests', () => {
   const token = 'mock-jwt-token';
-  const mockCmsUrl = 'https://cms.pageel.app';
+  const mockWorkerUrl = 'https://api.pageel.app';
 
   beforeEach(() => {
-    vi.stubEnv('PAGEEL_APP_URL', mockCmsUrl);
+    vi.stubEnv('PAGEEL_WORKER_URL', mockWorkerUrl);
     vi.stubEnv('CMS_SECRET', 'super-secret-key-16-chars-min');
     vi.stubGlobal('fetch', vi.fn());
   });
@@ -41,7 +41,7 @@ describe('auth-bridge TDD tests', () => {
 
       const result = await verifyAppToken(token, {});
 
-      expect(fetchMock).toHaveBeenCalledWith(`${mockCmsUrl}/api/verify-bridge`, expect.objectContaining({
+      expect(fetchMock).toHaveBeenCalledWith(`${mockWorkerUrl}/api/verify-bridge`, expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -65,7 +65,7 @@ describe('auth-bridge TDD tests', () => {
 
       const result = await verifyAppToken(token, { PAGEEL_APP_BINDING: mockBinding });
 
-      expect(mockBinding.fetch).toHaveBeenCalledWith('https://cms.pageel.app/api/verify-bridge', expect.objectContaining({
+      expect(mockBinding.fetch).toHaveBeenCalledWith('https://api.pageel.app/api/verify-bridge', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -115,7 +115,7 @@ describe('auth-bridge TDD tests', () => {
 
       const result = await logoutAppSession(token, {});
 
-      expect(fetchMock).toHaveBeenCalledWith(`${mockCmsUrl}/api/auth/logout`, expect.objectContaining({
+      expect(fetchMock).toHaveBeenCalledWith(`${mockWorkerUrl}/api/auth/logout`, expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -133,7 +133,7 @@ describe('auth-bridge TDD tests', () => {
 
       const result = await logoutAppSession(token, { PAGEEL_APP_BINDING: mockBinding });
 
-      expect(mockBinding.fetch).toHaveBeenCalledWith('https://cms.pageel.app/api/auth/logout', expect.objectContaining({
+      expect(mockBinding.fetch).toHaveBeenCalledWith('https://api.pageel.app/api/auth/logout', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -244,7 +244,7 @@ describe('auth-bridge TDD tests', () => {
 
       const response = await handleLogout(context);
       expect(context.cookies.delete).toHaveBeenCalledWith('pageel_session', expect.objectContaining({ path: '/' }));
-      expect(fetchMock).toHaveBeenCalledWith(`${mockCmsUrl}/api/auth/logout`, expect.objectContaining({
+      expect(fetchMock).toHaveBeenCalledWith(`${mockWorkerUrl}/api/auth/logout`, expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: 'gh-token' }),

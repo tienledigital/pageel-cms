@@ -25,11 +25,11 @@ async function fetchWithTimeout(url: string, options: RequestInit, binding?: any
 // @para-doc [#csa-cms-app-int-binding]
 // @para-doc [#csa-cms-app-int-test-mode]
 export async function verifyAppToken(token: string, env: any): Promise<BridgeVerificationResponse> {
-  const appUrl = env.PAGEEL_APP_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_APP_URL : '') || 'https://cms.pageel.app';
+  const workerUrl = env.PAGEEL_WORKER_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_WORKER_URL : '') || env.PAGEEL_APP_URL || 'https://api.pageel.app';
   const binding = env.PAGEEL_APP_BINDING;
 
   // Endpoint to call
-  const url = `${appUrl}/api/verify-bridge`;
+  const url = `${workerUrl}/api/verify-bridge`;
 
   const response = await fetchWithTimeout(url, {
     method: 'POST',
@@ -48,11 +48,11 @@ export async function verifyAppToken(token: string, env: any): Promise<BridgeVer
  * Logout session from SaaS app
  */
 export async function logoutAppSession(token: string, env: any): Promise<boolean> {
-  const appUrl = env.PAGEEL_APP_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_APP_URL : '') || 'https://cms.pageel.app';
+  const workerUrl = env.PAGEEL_WORKER_URL || (typeof process !== 'undefined' ? process.env.PAGEEL_WORKER_URL : '') || env.PAGEEL_APP_URL || 'https://api.pageel.app';
   const binding = env.PAGEEL_APP_BINDING;
 
   // Endpoint to call
-  const url = `${appUrl}/api/auth/logout`;
+  const url = `${workerUrl}/api/auth/logout`;
 
   try {
     const response = await fetchWithTimeout(url, {
