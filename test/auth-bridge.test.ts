@@ -189,7 +189,7 @@ describe('auth-bridge TDD tests', () => {
       const response = await handleCallback(context);
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toBe('/cms');
-      expect(context.cookies.set).toHaveBeenCalledWith('pageel_session', expect.any(String), expect.objectContaining({
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_session', expect.any(String), expect.objectContaining({
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
@@ -243,7 +243,7 @@ describe('auth-bridge TDD tests', () => {
       context.cookies.get.mockReturnValue({ value: sessionToken });
 
       const response = await handleLogout(context);
-      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_session', expect.objectContaining({ path: '/' }));
+      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_session', expect.objectContaining({ path: '/' }));
       expect(fetchMock).toHaveBeenCalledWith(`${mockWorkerUrl}/api/auth/logout`, expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -9,7 +9,7 @@
  *       at login and they are stored encrypted inside the session cookie.
  */
 
-const COOKIE_NAME = 'pageel_session';
+const COOKIE_NAME = 'pageel_cms_session';
 const MAX_AGE = 86400; // 24 hours
 
 function getSecret(): string {

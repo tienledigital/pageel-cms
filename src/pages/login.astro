@@ -1,9 +1,9 @@
 ---
-import { verifySession, hasEnvGitConfig, hasEnvAuth } from '../lib/session';
+import { verifySession, hasEnvGitConfig, hasEnvAuth, COOKIE_NAME } from '../lib/session';
 import { getSsoRedirectUrl } from '../lib/auth-bridge';
 
 // If already authenticated, redirect to CMS
-const sessionCookie = Astro.cookies.get('pageel_session')?.value;
+const sessionCookie = Astro.cookies.get(COOKIE_NAME)?.value;
 if (sessionCookie) {
   const session = await verifySession(sessionCookie);
   if (session) {
