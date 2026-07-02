@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ request, cookies, redirect, locals }) => {
       maxAge: cookieOpts.maxAge,
     });
 
-    return redirect('/admin');
+    return redirect('/cms');
   } catch (err: any) {
     console.error('[callback] Verification error:', err.message || err);
     return redirect('/login?error=auth_failed');

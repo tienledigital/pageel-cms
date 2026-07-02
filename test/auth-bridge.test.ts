@@ -166,7 +166,7 @@ describe('auth-bridge TDD tests', () => {
       expect(context.redirect).toHaveBeenCalledWith('/login?error=auth_failed');
     });
 
-    it('should set session cookie and redirect to /admin on successful verification', async () => {
+    it('should set session cookie and redirect to /cms on successful verification', async () => {
       const mockResponse = {
         success: true,
         user: { id: '1', email: 'user@pageel.app', role: 'admin' },
@@ -188,7 +188,7 @@ describe('auth-bridge TDD tests', () => {
 
       const response = await handleCallback(context);
       expect(response.status).toBe(302);
-      expect(response.headers.get('Location')).toBe('/admin');
+      expect(response.headers.get('Location')).toBe('/cms');
       expect(context.cookies.set).toHaveBeenCalledWith('pageel_session', expect.any(String), expect.objectContaining({
         httpOnly: true,
         sameSite: 'lax',
