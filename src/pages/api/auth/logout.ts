@@ -4,7 +4,7 @@ import { getWorkerUrl } from '../../../lib/auth-bridge';
 
 // @para-doc [#csa-sso-api-logout]
 // @para-doc [#csa-sso-sandbox-transport]
-export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => {
+const handleLogout: APIRoute = async ({ cookies, redirect, request, locals }) => {
   // 1. Delete local session cookie unconditionally first
   cookies.delete(COOKIE_NAME, { path: '/' });
 
@@ -15,3 +15,6 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
 
   return redirect(`${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`);
 };
+
+export const GET: APIRoute = handleLogout;
+export const POST: APIRoute = handleLogout;

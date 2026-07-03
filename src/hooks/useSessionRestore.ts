@@ -23,11 +23,8 @@ export function useSessionRestore() {
 
   const performSimpleLogout = useCallback(async () => {
     clearAuth();
-    // POST to server to clear session cookie
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch { /* ignore */ }
-    window.location.href = '/login';
+    // Redirect browser to logout endpoint to clear all session cookies (local + sso)
+    window.location.href = '/api/auth/logout';
   }, [clearAuth]);
 
   // Listen for auth-error events (401 from API proxy)
