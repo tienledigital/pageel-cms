@@ -68,25 +68,10 @@ export async function verifyAppToken(token: string, env: any): Promise<BridgeVer
 
 /**
  * Logout session from SaaS app
+ * @deprecated Use GET browser redirect-based logout instead.
  */
 export async function logoutAppSession(token: string, env: any): Promise<boolean> {
-  const workerUrl = getWorkerUrl(env);
-  const binding = env.PAGEEL_APP_BINDING;
-
-  // Endpoint to call
-  const url = `${workerUrl}/api/auth/logout`;
-
-  try {
-    const response = await fetchWithTimeout(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    }, binding);
-
-    return response.ok;
-  } catch {
-    return false;
-  }
+  return true;
 }
 
 /**

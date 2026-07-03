@@ -105,49 +105,10 @@ describe('auth-bridge TDD tests', () => {
     });
   });
 
-  describe('logoutAppSession', () => {
-    it('should call SaaS logout via fetch fallback when Service Binding is absent', async () => {
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      });
-      vi.stubGlobal('fetch', fetchMock);
-
+  describe('logoutAppSession (deprecated)', () => {
+    it('should return true', async () => {
       const result = await logoutAppSession(token, {});
-
-      expect(fetchMock).toHaveBeenCalledWith(`${mockWorkerUrl}/api/auth/logout`, expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      }));
       expect(result).toBe(true);
-    });
-
-    it('should call SaaS logout via Service Binding when present', async () => {
-      const mockBinding = {
-        fetch: vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({ success: true }),
-        }),
-      };
-
-      const result = await logoutAppSession(token, { PAGEEL_APP_BINDING: mockBinding });
-
-      expect(mockBinding.fetch).toHaveBeenCalledWith('https://api.pageel.app/api/auth/logout', expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      }));
-      expect(result).toBe(true);
-      expect(globalThis.fetch).not.toHaveBeenCalled();
-    });
-
-    it('should return false if SaaS logout fails or times out', async () => {
-      const fetchMock = vi.fn().mockRejectedValue(new Error('Network error'));
-      vi.stubGlobal('fetch', fetchMock);
-
-      const result = await logoutAppSession(token, {});
-      expect(result).toBe(false);
     });
   });
 
@@ -216,14 +177,10 @@ describe('auth-bridge TDD tests', () => {
     });
   });
 
+  // @para-doc [#csa-sso-api-logout]
+  // @para-doc [#csa-sso-sandbox-transport]
   describe('Logout Endpoint', () => {
-    it('should delete local session cookie and call SaaS logout api', async () => {
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      });
-      vi.stubGlobal('fetch', fetchMock);
-
+    it('should delete local session cookie and redirect to SaaS Gateway GET logout URL', async () => {
       const context = {
         request: new Request('http://localhost/api/auth/logout'),
         cookies: {
@@ -231,26 +188,21 @@ describe('auth-bridge TDD tests', () => {
           delete: vi.fn(),
           get: vi.fn(),
         },
-        locals: {},
+        locals: {
+          runtime: {
+            env: {
+              PAGEEL_APP_URL: 'https://api.pageel.app'
+            }
+          }
+        },
         redirect: vi.fn().mockImplementation((url) => new Response(null, { status: 302, headers: { Location: url } })),
       } as any;
 
-      const sessionToken = await createSession({
-        username: 'user@pageel.app',
-        repo: 'owner/repo',
-        token: 'gh-token',
-      });
-      context.cookies.get.mockReturnValue({ value: sessionToken });
-
       const response = await handleLogout(context);
       expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_session', expect.objectContaining({ path: '/' }));
-      expect(fetchMock).toHaveBeenCalledWith(`${mockWorkerUrl}/api/auth/logout`, expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: 'gh-token' }),
-      }));
       expect(response.status).toBe(302);
-      expect(response.headers.get('Location')).toBe('/login');
+      expect(response.headers.get('Location')).toContain('https://api.pageel.app/api/auth/logout?return_url=');
+      expect(response.headers.get('Location')).toContain(encodeURIComponent('http://localhost/login'));
     });
   });
 

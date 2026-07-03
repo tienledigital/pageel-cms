@@ -1,33 +1,17 @@
-/**
- * POST /api/auth/logout
- * Clear session cookie → resolve token → call SaaS remote logout API → redirect /login
- */
-
 import type { APIRoute } from 'astro';
-import { COOKIE_NAME, verifySession, resolveGitCredentials } from '../../../lib/session';
-import { logoutAppSession } from '../../../lib/auth-bridge';
+import { COOKIE_NAME } from '../../../lib/session';
+import { getWorkerUrl } from '../../../lib/auth-bridge';
 
-// @para-doc [#csa-cms-app-int-logout]
-export const POST: APIRoute = async ({ cookies, redirect, locals }) => {
+// @para-doc [#csa-sso-api-logout]
+// @para-doc [#csa-sso-sandbox-transport]
+export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => {
   // 1. Delete local session cookie unconditionally first
-  const sessionToken = cookies.get(COOKIE_NAME)?.value;
   cookies.delete(COOKIE_NAME, { path: '/' });
 
-  // 2. Resolve token and call SaaS remote logout API in try-catch
-  if (sessionToken) {
-    try {
-      const session = await verifySession(sessionToken);
-      if (session) {
-        const credentials = resolveGitCredentials(session);
-        if (credentials.token) {
-          const env = (locals as any)?.runtime?.env || {};
-          await logoutAppSession(credentials.token, env);
-        }
-      }
-    } catch (err: any) {
-      console.error('[logout] Remote logout failed:', err.message || err);
-    }
-  }
+  // 2. Redirect browser to SaaS Gateway GET logout URL to clear domain cookies
+  const env = (locals as any)?.runtime?.env || {};
+  const workerUrl = getWorkerUrl(env);
+  const origin = new URL(request.url).origin;
 
-  return redirect('/login');
+  return redirect(`${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`);
 };
