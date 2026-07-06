@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.2] - 2026-07-06
+
+### Fixed
+
+- **WYSIWYG Editor Settings Lost**: Fixed an issue where saving settings or collections overwrote `.pageelrc.json` on Git and accidentally removed the `plugins` configuration, disabling the WYSIWYG editor on subsequent sessions.
+
+## [2.2.1] - 2026-07-02
+
+### Fixed
+
+- **Auth Bridge Redirect & Architecture Mismatch**: Resolved critical SSO routing failures across Cloudflare Pages (SPA) and Cloudflare Workers (API).
+  - Fixed endpoint parameters and route paths for `getSsoRedirectUrl` redirect.
+  - Routed CMS server-side calls using absolute API Worker URLs to prevent 404 errors.
+  - Aligned verify-bridge response schema, corrected callback redirect destination, and fixed session cookie loop/naming conflicts.
+
 ## [2.2.0] - 2026-07-01
 
 ### Added
