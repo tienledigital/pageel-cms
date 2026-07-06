@@ -38,6 +38,11 @@ export interface PageelrcConfig {
     newImage?: string;
     updateImage?: string;
   };
+  plugins?: {
+    editor?: string;
+    toolbar?: string;
+    preview?: string;
+  };
 }
 
 /**
@@ -165,12 +170,26 @@ export async function saveCollectionsToPageelrc(
       },
     };
 
-    // Check if file exists
+    // Check if file exists and preserve plugins field if it exists
     let sha: string | null = null;
+    let existingPlugins: any = undefined;
     try {
       sha = await gitService.getFileSha('.pageelrc.json');
+      if (sha) {
+        const oldContent = await gitService.getFileContent('.pageelrc.json');
+        if (oldContent) {
+          const oldConfig = JSON.parse(oldContent);
+          if (oldConfig && oldConfig.plugins) {
+            existingPlugins = oldConfig.plugins;
+          }
+        }
+      }
     } catch (e) {
-      // File doesn't exist
+      // File doesn't exist or fail to read/parse, ignore
+    }
+
+    if (existingPlugins) {
+      config.plugins = existingPlugins;
     }
 
     const content = JSON.stringify(config, null, 2);
