@@ -2,8 +2,7 @@ import type { APIRoute } from 'astro';
 import { COOKIE_NAME } from '../../../lib/session';
 import { getWorkerUrl } from '../../../lib/auth-bridge';
 
-// @para-doc [#csa-sso-api-logout]
-// @para-doc [#csa-sso-sandbox-transport]
+// @para-doc [#csa-cms-app-int-logout]
 const handleLogout: APIRoute = async ({ cookies, redirect, request, locals }) => {
   // 1. Delete local session cookie unconditionally first
   cookies.delete(COOKIE_NAME, { path: '/' });
