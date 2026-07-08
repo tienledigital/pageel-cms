@@ -62,7 +62,16 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
   const workerUrl = getWorkerUrl(env);
   const origin = new URL(request.url).origin;
 
-  return redirect(`${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`);
+  const response = redirect(`${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`);
+
+  // Bulletproof fallback: manually append expired Set-Cookie headers for both Strict and Lax SameSite configurations
+  const secureFlag = isProd ? '; Secure' : '';
+  response.headers.append('Set-Cookie', `${COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly${secureFlag}; SameSite=Strict`);
+  response.headers.append('Set-Cookie', `${COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly${secureFlag}; SameSite=Lax`);
+  response.headers.append('Set-Cookie', `pageel_cms_csrf=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;${secureFlag}; SameSite=Strict`);
+  response.headers.append('Set-Cookie', `pageel_cms_csrf=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;${secureFlag}; SameSite=Lax`);
+
+  return response;
 };
 
 export const GET: APIRoute = async () => {
