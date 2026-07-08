@@ -24,11 +24,12 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
     csrfBody = formData.get('csrf_token')?.toString() || '';
   } catch {}
 
-  const submittedCsrf = csrfHeader || csrfBody;
+  const submittedCsrf = decodeURIComponent(csrfHeader || csrfBody);
+  const decodedCsrfCookie = decodeURIComponent(csrfCookie || '');
   const env = (locals as any)?.runtime?.env || {};
   const csrfSecret = env.CMS_SECRET || import.meta.env.CMS_SECRET || 'fallback-secret-key-16-chars';
 
-  const isValidCsrf = (await verifyCsrfToken(submittedCsrf, sessionId, csrfSecret)) && (submittedCsrf === csrfCookie);
+  const isValidCsrf = (await verifyCsrfToken(submittedCsrf, sessionId, csrfSecret)) && (submittedCsrf === decodedCsrfCookie);
 
   if (!isValidCsrf) {
     return new Response(JSON.stringify({ error: 'Forbidden: Invalid CSRF token' }), {
