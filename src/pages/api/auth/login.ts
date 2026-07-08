@@ -22,7 +22,7 @@ const loginSchema = z.object({
   token: z.string().optional()
 });
 
-export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress }) => {
+export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress, locals }) => {
   const ip = clientAddress || 'unknown';
 
   // Rate limit check
@@ -108,7 +108,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress
 
     // Set CSRF token cookie (Double Submit Cookie)
     const sessionId = sessionToken.split('.')[1] || 'session-signature';
-    const csrfSecret = import.meta.env.CMS_SECRET || 'fallback-secret-key-16-chars';
+    const env = (locals as any)?.runtime?.env || {};
+    const csrfSecret = env.CMS_SECRET || import.meta.env.CMS_SECRET || 'fallback-secret-key-16-chars';
     const csrfToken = await createCsrfToken(sessionId, csrfSecret);
 
     cookies.set('pageel_csrf_token', csrfToken, {
