@@ -80,7 +80,7 @@ A lightweight, self-hosted Content Management System that uses your **GitHub** r
 ### Security Model
 
 - **No client-side tokens**: Git PAT stored server-side only (env or encrypted in session cookie)
-- **Bcrypt password hashing**: 12-round bcrypt with constant-time comparison
+- **PBKDF2 password hashing**: Node-native Web Crypto API PBKDF2 (100k rounds) with constant-time verification
 - **HMAC-SHA256 sessions**: Signed cookies with HttpOnly + SameSite=Strict + Secure
 - **Token validation at login**: Dynamic tokens are verified against GitHub API before session is created
 - **Rate limiting**: 5 attempts per minute per IP
@@ -149,7 +149,7 @@ Edit `.env` with your credentials:
 
 ```env
 CMS_USER=admin
-CMS_PASS_HASH="$2a$12$..."   # See docs/deployment.md for hash generation
+CMS_PASS_HASH="pbkdf2:100000:..."   # PBKDF2 Web Crypto hash (use bin/cli.js to generate)
 CMS_SECRET=your-random-secret-min-16-chars
 
 # Optional — if omitted, users provide these at login (Multi-Tenant mode)
@@ -170,14 +170,11 @@ Open [http://localhost:4321](http://localhost:4321) — you'll be redirected to 
 ### 4. Generate Password Hash
 
 ```bash
-# After npm install (step 1)
-npx pageel-cms hash your-password
-
-# Or without project installed:
-node -e "require('bcryptjs').hash('your-password', 12).then(h => console.log(h))"
+# Generate hash using PBKDF2 Web Crypto API (Node.js native):
+node bin/cli.js hash your-password
 ```
 
-Copy the output hash to `CMS_PASS_HASH` in your `.env` file (wrap in double quotes).
+Copy the output hash (e.g., `pbkdf2:100000:salt_hex:hash_hex`) to `CMS_PASS_HASH` in your `.env` file (wrap in double quotes).
 
 ### 5. Production Build
 
