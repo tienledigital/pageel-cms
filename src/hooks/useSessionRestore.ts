@@ -27,7 +27,7 @@ export function useSessionRestore() {
     // Redirect browser to logout endpoint to clear all session cookies (local + sso)
     const getCookie = (name: string): string | undefined => {
       const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-      if (match) return match[2];
+      if (match) return decodeURIComponent(match[2]);
     };
 
     const csrfToken = getCookie('pageel_csrf_token');
