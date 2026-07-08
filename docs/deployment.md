@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> **Version**: 2.0.1 | **Updated**: 2026-03-27
+> **Version**: 2.3.0 | **Updated**: 2026-07-08
 
 ## Prerequisites
 
@@ -15,8 +15,8 @@ Create a `.env` file (see `.env.example`):
 | Variable | Required | Description |
 |:---------|:---------|:------------|
 | `CMS_USER` | Server/Connect | Login username |
-| `CMS_PASS_HASH` | Server/Connect | Bcrypt hash of the login password |
-| `CMS_SECRET` | ✅ Always | Random string (min 16 chars) for session signing |
+| `CMS_PASS_HASH` | Server/Connect | PBKDF2 hash of the login password (format: `pbkdf2:100000:salt_hex:hash_hex`) |
+| `CMS_SECRET` | ✅ Always | Random string (min 16 chars) for session signing & CSRF |
 | `GITHUB_TOKEN` | Server only | Git personal access token (fine-grained recommended) |
 | `CMS_REPO` | Server only | Repository in `owner/repo` format |
 | `CMS_SERVICE` | ❌ Optional | `github` (default), `gitea`, or `gogs` |
@@ -26,33 +26,22 @@ Create a `.env` file (see `.env.example`):
 
 ## Generating CMS_PASS_HASH
 
-The password is stored as a **bcrypt hash** — the server never stores your plaintext password.
+The password is stored as a **PBKDF2 Web Crypto hash** — the server never stores your plaintext password.
 
-### Option 1: Using Node.js
+### Option 1: Using project CLI (after `npm install`)
 
-```bash
-node -e "require('bcryptjs').hash('your-password', 12).then(h => console.log(h))"
-```
-
-### Option 2: Using project CLI (after `npm install`)
+Generate the PBKDF2 hash using the built-in CLI:
 
 ```bash
-npx pageel-cms hash your-password
+node bin/cli.js hash your-password
 ```
 
-### Option 3: Online generator
+### Option 2: Output Format
 
-Use [bcrypt-generator.com](https://bcrypt-generator.com/) with 12 rounds.
+The generated hash will output in the following format:
+`pbkdf2:100000:salt_hex:hash_hex`
 
-### Important Notes
-
-- The hash starts with `$2a$12$` or `$2b$12$` — this is normal
-- Use **12 rounds** for a good balance of security and speed
-- The `$` characters in the hash can cause issues with some `.env` parsers — wrap the value in double quotes:
-
-```env
-CMS_PASS_HASH="$2a$12$LJ3m4ys8Rqh5X.9Q4j5KyOZ1gGCIk9PM5dLr7h2EXAMPLE"
-```
+Copy this exact string directly into your environment configuration.
 
 ## Generating CMS_SECRET
 
@@ -82,7 +71,7 @@ In **Vercel Dashboard → Project → Settings → Environment Variables**:
 
 ```
 CMS_USER       = admin
-CMS_PASS_HASH  = $2a$12$...   ← paste as-is, Vercel doesn't corrupt $ chars
+CMS_PASS_HASH  = pbkdf2:100000:...   ← paste as-is
 CMS_SECRET     = your-random-secret
 GITHUB_TOKEN   = ghp_xxx
 CMS_REPO       = owner/repo
@@ -144,7 +133,7 @@ npm run build
 ```bash
 # Set environment variables
 export CMS_USER=admin
-export CMS_PASS_HASH='$2a$12$...'
+export CMS_PASS_HASH='pbkdf2:100000:...'
 export CMS_SECRET=your-secret
 export GITHUB_TOKEN=ghp_xxx
 export CMS_REPO=owner/repo
@@ -213,4 +202,4 @@ Before going to production:
 
 ---
 
-_Last updated: 2026-03-26_
+_Last updated: 2026-07-08_
