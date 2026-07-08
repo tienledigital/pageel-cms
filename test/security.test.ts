@@ -464,6 +464,7 @@ describe('Edge Security Hardening TDD Tests', () => {
           headers: { 'x-csrf-token': validCsrf },
         }),
         cookies: {
+          set: vi.fn(),
           delete: vi.fn(),
           get: vi.fn().mockImplementation((name) => {
             if (name === 'pageel_cms_session') return { value: sessionToken };
@@ -483,8 +484,8 @@ describe('Edge Security Hardening TDD Tests', () => {
 
       const response = await handleLogoutPOST(context);
       expect(response.status).toBe(302);
-      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_session', expect.any(Object));
-      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_csrf', expect.any(Object));
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_session', '', expect.objectContaining({ expires: expect.any(Date) }));
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_csrf', '', expect.objectContaining({ expires: expect.any(Date) }));
     });
   });
 });

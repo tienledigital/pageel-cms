@@ -209,8 +209,8 @@ describe('auth-bridge TDD tests', () => {
       } as any;
 
       const response = await handleLogout(context);
-      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_session', expect.objectContaining({ path: '/' }));
-      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_csrf', expect.objectContaining({ path: '/' }));
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_session', '', expect.objectContaining({ expires: expect.any(Date) }));
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_csrf', '', expect.objectContaining({ expires: expect.any(Date) }));
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('https://api.example.com/api/auth/logout?return_url=');
       expect(response.headers.get('Location')).toContain(encodeURIComponent('http://localhost/login'));

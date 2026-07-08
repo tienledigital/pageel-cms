@@ -38,9 +38,25 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
     });
   }
 
-  // Delete both local session cookie and CSRF cookie
-  cookies.delete(COOKIE_NAME, { path: '/' });
-  cookies.delete('pageel_cms_csrf', { path: '/' });
+  const isProd = import.meta.env.PROD;
+
+  // Clear session cookie with identical flags (Secure, SameSite)
+  cookies.set(COOKIE_NAME, '', {
+    path: '/',
+    expires: new Date(0),
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+  });
+
+  // Clear CSRF cookie
+  cookies.set('pageel_cms_csrf', '', {
+    path: '/',
+    expires: new Date(0),
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax',
+  });
 
   // Redirect browser to SaaS Gateway GET logout URL to clear domain cookies
   const workerUrl = getWorkerUrl(env);
