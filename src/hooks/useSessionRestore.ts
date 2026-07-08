@@ -21,10 +21,33 @@ export function useSessionRestore() {
     clearAuth,
   } = useAuthStore();
 
+  // @para-doc [#csa-cms-client-logout-post]
   const performSimpleLogout = useCallback(async () => {
     clearAuth();
     // Redirect browser to logout endpoint to clear all session cookies (local + sso)
-    window.location.href = '/api/auth/logout';
+    const getCookie = (name: string): string | undefined => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift();
+    };
+
+    const csrfToken = getCookie('pageel_csrf_token');
+    if (csrfToken) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/api/auth/logout';
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'csrf_token';
+      input.value = csrfToken;
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
+    } else {
+      window.location.href = '/api/auth/logout';
+    }
   }, [clearAuth]);
 
   // Listen for auth-error events (401 from API proxy)
