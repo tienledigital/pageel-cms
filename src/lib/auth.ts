@@ -195,3 +195,18 @@ setInterval(() => {
     }
   }
 }, 300_000);
+
+// @para-doc [#csa-cms-sdk-rbac-mapping]
+export type UserRole = 'admin' | 'editor' | 'viewer';
+
+const ROLE_PERMISSIONS: Record<UserRole, Set<string>> = {
+  admin: new Set(['read', 'write', 'delete', 'config']),
+  editor: new Set(['read', 'write']),
+  viewer: new Set(['read']),
+};
+
+export function hasPermission(role: string | undefined, action: string): boolean {
+  const userRole = (role || 'admin') as UserRole;
+  const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.viewer;
+  return permissions.has(action);
+}

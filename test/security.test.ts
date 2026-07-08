@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // @ts-ignore
-import { verifyPBKDF2, hashPBKDF2, timingSafeEqual } from '../src/lib/auth';
+import { verifyPBKDF2, hashPBKDF2, timingSafeEqual, hasPermission } from '../src/lib/auth';
 // @ts-ignore
 import { createCsrfToken, verifyCsrfToken } from '../src/lib/session';
 // @ts-ignore
@@ -9,6 +9,10 @@ import { POST as handleLogin } from '../src/pages/api/auth/login';
 import { validateFileMagicBytes, sanitizeSvg } from '../src/lib/security-utils';
 // @ts-ignore
 import { POST as handleUpload } from '../src/pages/api/proxy/upload';
+// @ts-ignore
+import { GET as handleCallback } from '../src/pages/api/auth/callback';
+// @ts-ignore
+import { POST as handleLogoutPOST, GET as handleLogoutGET } from '../src/pages/api/auth/logout';
 
 vi.mock('../src/lib/session', async (importOriginal) => {
   const actual = await importOriginal<any>();
@@ -357,6 +361,130 @@ describe('Edge Security Hardening TDD Tests', () => {
       const uploadedText = atob(uploadedBase64);
       
       expect(uploadedText).not.toContain('<script');
+    });
+  });
+
+  describe('SSO Callback API with CSRF integration', () => {
+    it('should set both session and CSRF cookies on successful SSO handshake', async () => {
+      const mockResponse = {
+        success: true,
+        user: { id: '1', email: 'sso-user@example.com', role: 'admin' },
+        config: { githubToken: 'gh-token', repoOwner: 'owner', repoName: 'repo' }
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockResponse,
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const context = {
+        request: new Request('http://localhost/api/auth/callback?token=sso-jwt-token'),
+        cookies: { set: vi.fn(), delete: vi.fn(), get: vi.fn() },
+        locals: {},
+        redirect: vi.fn().mockImplementation((url) => new Response(null, { status: 302, headers: { Location: url } })),
+      } as any;
+
+      const response = await handleCallback(context);
+      expect(response.status).toBe(302);
+      expect(context.redirect).toHaveBeenCalledWith('/cms');
+      
+      // Nên set session cookie
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_session', expect.any(String), expect.any(Object));
+      // Nên set CSRF cookie
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_csrf_token', expect.any(String), expect.objectContaining({
+        httpOnly: false,
+        path: '/',
+      }));
+    });
+  });
+
+  describe('Dynamic RBAC Mapping', () => {
+    it('should grant all permissions to admin', () => {
+      expect(hasPermission('admin', 'read')).toBe(true);
+      expect(hasPermission('admin', 'write')).toBe(true);
+      expect(hasPermission('admin', 'delete')).toBe(true);
+      expect(hasPermission('admin', 'config')).toBe(true);
+    });
+
+    it('should grant read and write permissions to editor', () => {
+      expect(hasPermission('editor', 'read')).toBe(true);
+      expect(hasPermission('editor', 'write')).toBe(true);
+      expect(hasPermission('editor', 'delete')).toBe(false);
+      expect(hasPermission('editor', 'config')).toBe(false);
+    });
+
+    it('should grant read permission only to viewer', () => {
+      expect(hasPermission('viewer', 'read')).toBe(true);
+      expect(hasPermission('viewer', 'write')).toBe(false);
+      expect(hasPermission('viewer', 'delete')).toBe(false);
+      expect(hasPermission('viewer', 'config')).toBe(false);
+    });
+
+    it('should fallback to admin permissions if role is undefined', () => {
+      expect(hasPermission(undefined, 'write')).toBe(true);
+      expect(hasPermission(undefined, 'config')).toBe(true);
+    });
+  });
+
+  describe('SaaS Logout API with POST and CSRF protection', () => {
+    it('should reject GET requests with 405 Method Not Allowed', async () => {
+      const context = {
+        request: new Request('http://localhost/api/auth/logout', { method: 'GET' }),
+        cookies: { delete: vi.fn() },
+      } as any;
+
+      const response = await handleLogoutGET(context);
+      expect(response.status).toBe(405);
+    });
+
+    it('should reject POST request if CSRF token is missing or invalid', async () => {
+      const context = {
+        request: new Request('http://localhost/api/auth/logout', {
+          method: 'POST',
+        }),
+        cookies: {
+          delete: vi.fn(),
+          get: vi.fn().mockReturnValue({ value: 'session-payload.session-sig' }),
+        },
+        locals: {},
+      } as any;
+
+      const response = await handleLogoutPOST(context);
+      expect(response.status).toBe(403);
+    });
+
+    it('should allow POST request with valid CSRF token, delete cookies and redirect', async () => {
+      const sessionToken = 'payload.session-signature-123';
+      const validCsrf = await createCsrfToken('session-signature-123', secretKey);
+
+      const context = {
+        request: new Request('http://localhost/api/auth/logout', {
+          method: 'POST',
+          headers: { 'x-csrf-token': validCsrf },
+        }),
+        cookies: {
+          delete: vi.fn(),
+          get: vi.fn().mockImplementation((name) => {
+            if (name === 'pageel_cms_session') return { value: sessionToken };
+            if (name === 'pageel_csrf_token') return { value: validCsrf };
+            return null;
+          }),
+        },
+        locals: {
+          runtime: {
+            env: {
+              PAGEEL_APP_URL: 'https://api.example.com'
+            }
+          }
+        },
+        redirect: vi.fn().mockImplementation((url) => new Response(null, { status: 302, headers: { Location: url } })),
+      } as any;
+
+      const response = await handleLogoutPOST(context);
+      expect(response.status).toBe(302);
+      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_session', expect.any(Object));
+      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_csrf_token', expect.any(Object));
     });
   });
 });

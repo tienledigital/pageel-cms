@@ -1,7 +1,7 @@
 // @para-doc [#csa-cms-app-int-test-mode]
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { verifyAppToken, logoutAppSession, getSsoRedirectUrl } from '../src/lib/auth-bridge';
-import { createSession } from '../src/lib/session';
+import { createSession, createCsrfToken } from '../src/lib/session';
 
 // Import endpoints (will fail RED stage until files are created)
 // @ts-ignore
@@ -11,7 +11,7 @@ import { POST as handleLogout } from '../src/pages/api/auth/logout';
 
 describe('auth-bridge TDD tests', () => {
   const token = 'mock-jwt-token';
-  const mockWorkerUrl = 'https://api.pageel.app';
+  const mockWorkerUrl = 'https://api.example.com';
 
   beforeEach(() => {
     vi.stubEnv('PAGEEL_WORKER_URL', mockWorkerUrl);
@@ -29,7 +29,7 @@ describe('auth-bridge TDD tests', () => {
     it('should use HTTP fetch when Service Binding is not present (fallback mode)', async () => {
       const mockResponse = {
         success: true,
-        user: { id: '1', email: 'test@pageel.app', role: 'admin' },
+        user: { id: '1', email: 'test@example.com', role: 'admin' },
         config: { githubToken: 'gh-token', repoOwner: 'owner', repoName: 'repo' }
       };
 
@@ -52,7 +52,7 @@ describe('auth-bridge TDD tests', () => {
     it('should use Service Binding when present in env (binding mode)', async () => {
       const mockResponse = {
         success: true,
-        user: { id: '1', email: 'test@pageel.app', role: 'admin' },
+        user: { id: '1', email: 'test@example.com', role: 'admin' },
         config: { githubToken: 'gh-token', repoOwner: 'owner', repoName: 'repo' }
       };
 
@@ -65,7 +65,7 @@ describe('auth-bridge TDD tests', () => {
 
       const result = await verifyAppToken(token, { PAGEEL_APP_BINDING: mockBinding });
 
-      expect(mockBinding.fetch).toHaveBeenCalledWith('https://api.pageel.app/api/auth/verify-bridge', expect.objectContaining({
+      expect(mockBinding.fetch).toHaveBeenCalledWith('https://api.example.com/api/auth/verify-bridge', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -130,7 +130,7 @@ describe('auth-bridge TDD tests', () => {
     it('should set session cookie and redirect to /cms on successful verification', async () => {
       const mockResponse = {
         success: true,
-        user: { id: '1', email: 'user@pageel.app', role: 'admin' },
+        user: { id: '1', email: 'user@example.com', role: 'admin' },
         config: { githubToken: 'gh-token', repoOwner: 'owner', repoName: 'repo' }
       };
 
@@ -181,17 +181,27 @@ describe('auth-bridge TDD tests', () => {
   // @para-doc [#csa-sso-sandbox-transport]
   describe('Logout Endpoint', () => {
     it('should delete local session cookie and redirect to SaaS Gateway GET logout URL', async () => {
+      const sessionToken = 'payload.session-sig-abc';
+      const validCsrf = await createCsrfToken('session-sig-abc', 'super-secret-key-16-chars-min');
+
       const context = {
-        request: new Request('http://localhost/api/auth/logout'),
+        request: new Request('http://localhost/api/auth/logout', {
+          method: 'POST',
+          headers: { 'x-csrf-token': validCsrf },
+        }),
         cookies: {
           set: vi.fn(),
           delete: vi.fn(),
-          get: vi.fn(),
+          get: vi.fn().mockImplementation((name) => {
+            if (name === 'pageel_cms_session') return { value: sessionToken };
+            if (name === 'pageel_csrf_token') return { value: validCsrf };
+            return null;
+          }),
         },
         locals: {
           runtime: {
             env: {
-              PAGEEL_APP_URL: 'https://api.pageel.app'
+              PAGEEL_APP_URL: 'https://api.example.com'
             }
           }
         },
@@ -200,20 +210,21 @@ describe('auth-bridge TDD tests', () => {
 
       const response = await handleLogout(context);
       expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_session', expect.objectContaining({ path: '/' }));
+      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_csrf_token', expect.objectContaining({ path: '/' }));
       expect(response.status).toBe(302);
-      expect(response.headers.get('Location')).toContain('https://api.pageel.app/api/auth/logout?return_url=');
+      expect(response.headers.get('Location')).toContain('https://api.example.com/api/auth/logout?return_url=');
       expect(response.headers.get('Location')).toContain(encodeURIComponent('http://localhost/login'));
     });
   });
 
   describe('Login UI Toggle Logic', () => {
     it('should determine SSO mode is active when PAGEEL_APP_URL is configured', () => {
-      const mockEnv = { PAGEEL_APP_URL: 'https://cms.pageel.app' };
+      const mockEnv = { PAGEEL_APP_URL: 'https://cms.example.com' };
       const appUrl = mockEnv.PAGEEL_APP_URL || '';
       const hasSso = !!appUrl;
       
       expect(hasSso).toBe(true);
-      expect(appUrl).toBe('https://cms.pageel.app');
+      expect(appUrl).toBe('https://cms.example.com');
     });
 
     it('should determine SSO mode is inactive when PAGEEL_APP_URL is not configured', () => {
@@ -226,15 +237,15 @@ describe('auth-bridge TDD tests', () => {
     });
 
     it('should generate correct redirect SSO URL with callback parameter', () => {
-      const mockEnv = { PAGEEL_APP_URL: 'https://cms.pageel.app' };
-      const mockEnvWithSlash = { PAGEEL_APP_URL: 'https://cms.pageel.app/' };
+      const mockEnv = { PAGEEL_APP_URL: 'https://cms.example.com' };
+      const mockEnvWithSlash = { PAGEEL_APP_URL: 'https://cms.example.com/' };
       const mockOrigin = 'http://localhost:3000';
       
       const redirectUrl = getSsoRedirectUrl(mockEnv.PAGEEL_APP_URL, mockOrigin);
       const redirectUrlWithSlash = getSsoRedirectUrl(mockEnvWithSlash.PAGEEL_APP_URL, mockOrigin);
       
-      expect(redirectUrl).toBe('https://cms.pageel.app/api/auth/bridge?return_url=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback');
-      expect(redirectUrlWithSlash).toBe('https://cms.pageel.app/api/auth/bridge?return_url=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback');
+      expect(redirectUrl).toBe('https://cms.example.com/api/auth/bridge?return_url=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback');
+      expect(redirectUrlWithSlash).toBe('https://cms.example.com/api/auth/bridge?return_url=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback');
     });
   });
 });

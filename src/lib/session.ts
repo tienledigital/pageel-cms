@@ -45,6 +45,8 @@ export interface SessionPayload {
   repo?: string;
   /** Dynamic token — only set when env GITHUB_TOKEN is missing */
   token?: string;
+  /** User role for RBAC */
+  role?: string;
 }
 
 /**
@@ -54,6 +56,7 @@ export interface CreateSessionOptions {
   username: string;
   repo?: string;
   token?: string;
+  role?: string;
 }
 
 /**
@@ -69,6 +72,7 @@ export async function createSession(options: CreateSessionOptions): Promise<stri
   // Only embed credentials when env vars are missing (Dynamic Session mode)
   if (options.repo) payload.repo = options.repo;
   if (options.token) payload.token = options.token;
+  if (options.role) payload.role = options.role;
 
   const payloadStr = btoa(JSON.stringify(payload));
   const signature = await hmacSign(payloadStr, secret);
