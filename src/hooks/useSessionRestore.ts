@@ -26,9 +26,8 @@ export function useSessionRestore() {
     clearAuth();
     // Redirect browser to logout endpoint to clear all session cookies (local + sso)
     const getCookie = (name: string): string | undefined => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      if (match) return match[2];
     };
 
     const csrfToken = getCookie('pageel_csrf_token');
@@ -46,7 +45,7 @@ export function useSessionRestore() {
       document.body.appendChild(form);
       form.submit();
     } else {
-      window.location.href = '/api/auth/logout';
+      window.location.href = '/login';
     }
   }, [clearAuth]);
 
