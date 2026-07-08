@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2026-07-08
+
+### Added
+
+- **Secure Magic Bytes Filter**: Integrated binary magic bytes validation for PNG, JPEG, GIF, and WebP formats to prevent extension spoofing.
+- **SVG Regex Scrubbing**: Implemented regex-based SVG sanitizer filtering dangerous tags (`<script>`, `<foreignObject>`), inline events (`onload`, `onerror`, etc.), and `javascript:` URIs (supporting HTML entity bypass mitigation).
+- **Dynamic Session CSRF Token Generation**: Added automatic generation and storage of a `pageel_csrf_token` cookie upon successful SSO handshake to prevent CSRF attacks.
+- **POST-ONLY Logout with CSRF**: Upgraded the logout endpoint to POST-only, validating the CSRF token (Double Submit Cookie pattern) before destroying session cookies.
+- **Dynamic RBAC (Role-Based Access Control)**: Implemented dynamic user roles (`admin`, `editor`, `viewer`) mapping permissions for read, write, delete, and configuration actions.
+
+### Refactored
+
+- **PBKDF2 Password CLI**: Ported the password hashing CLI generator from bcrypt to node-native Web Crypto API PBKDF2.
+- **Remove Bcryptjs**: Completely uninstalled `bcryptjs` and `@types/bcryptjs` from all project dependencies to improve security and performance.
+
 ## [2.2.2] - 2026-07-06
 
 ### Fixed

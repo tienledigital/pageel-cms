@@ -274,7 +274,7 @@ describe('Edge Security Hardening TDD Tests', () => {
 
   describe('Upload API Proxy Endpoint', () => {
     beforeEach(async () => {
-      // Import động để mock hoạt động tốt trong describe blocks
+      // Dynamic import to allow proper mock resolution in describe blocks
       const { verifySession, resolveGitCredentials } = await import('../src/lib/session');
       // @ts-ignore
       verifySession.mockResolvedValue({ username: 'admin' });
@@ -389,9 +389,9 @@ describe('Edge Security Hardening TDD Tests', () => {
       expect(response.status).toBe(302);
       expect(context.redirect).toHaveBeenCalledWith('/cms');
       
-      // Nên set session cookie
+      // Should set session cookie
       expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_session', expect.any(String), expect.any(Object));
-      // Nên set CSRF cookie
+      // Should set CSRF cookie
       expect(context.cookies.set).toHaveBeenCalledWith('pageel_csrf_token', expect.any(String), expect.objectContaining({
         httpOnly: false,
         path: '/',
