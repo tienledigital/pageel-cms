@@ -34,7 +34,7 @@ export function useSessionRestore() {
     if (csrfToken) {
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = '/api/auth/logout';
+      form.action = `/api/auth/logout?csrf_token=${encodeURIComponent(csrfToken)}`;
 
       const input = document.createElement('input');
       input.type = 'hidden';

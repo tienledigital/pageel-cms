@@ -86,7 +86,8 @@ export async function createSession(options: CreateSessionOptions): Promise<stri
 export async function verifySession(token: string): Promise<SessionPayload | null> {
   try {
     const secret = getSecret();
-    const [payloadStr, signature] = token.split('.');
+    const sanitizedToken = token.replace(/ /g, '+');
+    const [payloadStr, signature] = sanitizedToken.split('.');
     if (!payloadStr || !signature) return null;
 
     const valid = await hmacVerify(payloadStr, signature, secret);
@@ -161,7 +162,8 @@ export async function createCsrfToken(sessionId: string, secret: string): Promis
 
 export async function verifyCsrfToken(csrfToken: string, sessionId: string, secret: string): Promise<boolean> {
   try {
-    const [payloadStr, signature] = csrfToken.split('.');
+    const sanitizedToken = csrfToken.replace(/ /g, '+');
+    const [payloadStr, signature] = sanitizedToken.split('.');
     if (!payloadStr || !signature) return false;
     
     const valid = await hmacVerify(payloadStr, signature, secret);

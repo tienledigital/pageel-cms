@@ -15,17 +15,20 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
     });
   }
 
-  const sessionId = sessionToken.split('.')[1] || '';
+  const sessionId = (sessionToken.split('.')[1] || '').replace(/ /g, '+');
   const csrfHeader = request.headers.get('x-csrf-token') || '';
   
+  const url = new URL(request.url);
+  const csrfQuery = url.searchParams.get('csrf_token') || '';
+
   let csrfBody = '';
   try {
     const formData = await request.clone().formData();
     csrfBody = formData.get('csrf_token')?.toString() || '';
   } catch {}
 
-  const submittedCsrf = decodeURIComponent(csrfHeader || csrfBody);
-  const decodedCsrfCookie = decodeURIComponent(csrfCookie || '');
+  const submittedCsrf = decodeURIComponent(csrfHeader || csrfQuery || csrfBody).replace(/ /g, '+');
+  const decodedCsrfCookie = decodeURIComponent(csrfCookie || '').replace(/ /g, '+');
   const env = (locals as any)?.runtime?.env || {};
   const csrfSecret = env.CMS_SECRET || import.meta.env.CMS_SECRET || 'fallback-secret-key-16-chars';
 
