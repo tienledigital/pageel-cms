@@ -30,7 +30,7 @@ export function useSessionRestore() {
       if (match) return decodeURIComponent(match[2]);
     };
 
-    const csrfToken = getCookie('pageel_csrf_token');
+    const csrfToken = getCookie('pageel_cms_csrf');
     if (csrfToken) {
       const form = document.createElement('form');
       form.method = 'POST';

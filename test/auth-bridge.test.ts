@@ -194,7 +194,7 @@ describe('auth-bridge TDD tests', () => {
           delete: vi.fn(),
           get: vi.fn().mockImplementation((name) => {
             if (name === 'pageel_cms_session') return { value: sessionToken };
-            if (name === 'pageel_csrf_token') return { value: validCsrf };
+            if (name === 'pageel_cms_csrf') return { value: validCsrf };
             return null;
           }),
         },
@@ -210,7 +210,7 @@ describe('auth-bridge TDD tests', () => {
 
       const response = await handleLogout(context);
       expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_session', expect.objectContaining({ path: '/' }));
-      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_csrf_token', expect.objectContaining({ path: '/' }));
+      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_csrf', expect.objectContaining({ path: '/' }));
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('https://api.example.com/api/auth/logout?return_url=');
       expect(response.headers.get('Location')).toContain(encodeURIComponent('http://localhost/login'));

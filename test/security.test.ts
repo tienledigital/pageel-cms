@@ -166,7 +166,7 @@ describe('Edge Security Hardening TDD Tests', () => {
       // Should set session cookie
       expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_session', expect.any(String), expect.any(Object));
       // Should set CSRF cookie
-      expect(context.cookies.set).toHaveBeenCalledWith('pageel_csrf_token', expect.any(String), expect.objectContaining({
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_csrf', expect.any(String), expect.objectContaining({
         httpOnly: false, // CSRF token cookie allows client-side JS to read and attach to custom header
         path: '/',
       }));
@@ -392,7 +392,7 @@ describe('Edge Security Hardening TDD Tests', () => {
       // Should set session cookie
       expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_session', expect.any(String), expect.any(Object));
       // Should set CSRF cookie
-      expect(context.cookies.set).toHaveBeenCalledWith('pageel_csrf_token', expect.any(String), expect.objectContaining({
+      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_csrf', expect.any(String), expect.objectContaining({
         httpOnly: false,
         path: '/',
       }));
@@ -467,7 +467,7 @@ describe('Edge Security Hardening TDD Tests', () => {
           delete: vi.fn(),
           get: vi.fn().mockImplementation((name) => {
             if (name === 'pageel_cms_session') return { value: sessionToken };
-            if (name === 'pageel_csrf_token') return { value: validCsrf };
+            if (name === 'pageel_cms_csrf') return { value: validCsrf };
             return null;
           }),
         },
@@ -484,7 +484,7 @@ describe('Edge Security Hardening TDD Tests', () => {
       const response = await handleLogoutPOST(context);
       expect(response.status).toBe(302);
       expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_session', expect.any(Object));
-      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_csrf_token', expect.any(Object));
+      expect(context.cookies.delete).toHaveBeenCalledWith('pageel_cms_csrf', expect.any(Object));
     });
   });
 });

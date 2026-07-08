@@ -48,7 +48,7 @@ export const GET: APIRoute = async ({ request, cookies, redirect, locals }) => {
     const csrfSecret = env.CMS_SECRET || import.meta.env.CMS_SECRET || 'fallback-secret-key-16-chars';
     const csrfToken = await createCsrfToken(sessionId, csrfSecret);
 
-    cookies.set('pageel_csrf_token', csrfToken, {
+    cookies.set('pageel_cms_csrf', csrfToken, {
       httpOnly: false, // Client JS needs to read it
       secure: isProd,
       sameSite: 'lax',

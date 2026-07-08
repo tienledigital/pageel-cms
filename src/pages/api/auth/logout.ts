@@ -6,7 +6,7 @@ import { getWorkerUrl } from '../../../lib/auth-bridge';
 // @para-doc [#csa-cms-app-int-logout]
 export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => {
   const sessionToken = cookies.get(COOKIE_NAME)?.value;
-  const csrfCookie = cookies.get('pageel_csrf_token')?.value;
+  const csrfCookie = cookies.get('pageel_cms_csrf')?.value;
 
   if (!sessionToken || !csrfCookie) {
     return new Response(JSON.stringify({ error: 'Forbidden: Missing credentials' }), {
@@ -40,7 +40,7 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
 
   // Delete both local session cookie and CSRF cookie
   cookies.delete(COOKIE_NAME, { path: '/' });
-  cookies.delete('pageel_csrf_token', { path: '/' });
+  cookies.delete('pageel_cms_csrf', { path: '/' });
 
   // Redirect browser to SaaS Gateway GET logout URL to clear domain cookies
   const workerUrl = getWorkerUrl(env);
