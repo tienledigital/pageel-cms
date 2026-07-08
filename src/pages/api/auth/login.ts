@@ -9,9 +9,18 @@
  */
 
 import type { APIRoute } from 'astro';
+import { z } from 'zod';
 import { verifyCredentials, checkRateLimit } from '../../../lib/auth';
-import { createSession, getSessionCookieOptions, hasEnvGitConfig, hasEnvAuth } from '../../../lib/session';
+import { createSession, getSessionCookieOptions, hasEnvGitConfig, hasEnvAuth, createCsrfToken } from '../../../lib/session';
 import { createGitConfig, verifyTokenAccess } from '../../../lib/git-client';
+
+// @para-doc [#csa-cms-local-auth-validation]
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username and password are required.'),
+  password: z.string().min(1, 'Username and password are required.'),
+  repo: z.string().optional(),
+  token: z.string().optional()
+});
 
 export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress }) => {
   const ip = clientAddress || 'unknown';
@@ -26,15 +35,26 @@ export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress
     const formData = await request.formData();
     const username = formData.get('username')?.toString() || '';
     const password = formData.get('password')?.toString() || '';
+    const repo = formData.get('repo')?.toString() || undefined;
+    const tokenInput = formData.get('token')?.toString() || undefined;
 
     const envHasAuth = hasEnvAuth();
 
+    // Validate inputs using Zod
+    const validation = loginSchema.safeParse({
+      username: envHasAuth ? username : 'anonymous',
+      password: envHasAuth ? password : 'dummy-password',
+      repo,
+      token: tokenInput
+    });
+
+    if (!validation.success) {
+      const errMsg = validation.error.issues[0]?.message || 'Invalid inputs.';
+      return redirect('/login?error=' + encodeURIComponent(errMsg));
+    }
+
     // --- Password verification (Server Mode & Connect Mode only) ---
     if (envHasAuth) {
-      if (!username || !password) {
-        return redirect('/login?error=' + encodeURIComponent('Username and password are required.'));
-      }
-
       const valid = await verifyCredentials(username, password);
       if (!valid) {
         return redirect('/login?error=' + encodeURIComponent('Invalid credentials.'));
@@ -48,8 +68,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress
 
     if (!envHasGit) {
       // Env vars missing — require user to provide them
-      dynamicRepo = formData.get('repo')?.toString() || '';
-      dynamicToken = formData.get('token')?.toString() || '';
+      dynamicRepo = repo;
+      dynamicToken = tokenInput;
 
       if (!dynamicRepo || !dynamicToken) {
         return redirect('/login?error=' + encodeURIComponent('Repository and GitHub Token are required.'));
@@ -67,9 +87,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress
       }
     }
 
+    // @para-doc [#csa-cms-local-auth-session]
     // Create session and set cookie
     const sessionUser = envHasAuth ? username : (dynamicRepo || 'anonymous');
-    const token = await createSession({
+    const sessionToken = await createSession({
       username: sessionUser,
       repo: dynamicRepo,
       token: dynamicToken,
@@ -77,11 +98,24 @@ export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress
     const isProd = import.meta.env.PROD;
     const cookieOpts = getSessionCookieOptions(isProd);
 
-    cookies.set(cookieOpts.name, token, {
+    cookies.set(cookieOpts.name, sessionToken, {
       httpOnly: cookieOpts.httpOnly,
       secure: cookieOpts.secure,
       sameSite: cookieOpts.sameSite,
       path: cookieOpts.path,
+      maxAge: cookieOpts.maxAge,
+    });
+
+    // Set CSRF token cookie (Double Submit Cookie)
+    const sessionId = sessionToken.split('.')[1] || 'session-signature';
+    const csrfSecret = import.meta.env.CMS_SECRET || 'fallback-secret-key-16-chars';
+    const csrfToken = await createCsrfToken(sessionId, csrfSecret);
+
+    cookies.set('pageel_csrf_token', csrfToken, {
+      httpOnly: false, // Client JS needs to read it
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
       maxAge: cookieOpts.maxAge,
     });
 

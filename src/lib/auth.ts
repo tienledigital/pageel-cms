@@ -46,11 +46,11 @@ export function checkRateLimit(ip: string): boolean {
 async function getPassHash(): Promise<string> {
   // Platform env (Vercel, Railway, Docker) — not corrupted by dotenv-expand
   const metaHash = import.meta.env.CMS_PASS_HASH;
-  if (metaHash && isValidBcryptHash(metaHash)) return metaHash;
+  if (metaHash && isValidHash(metaHash)) return metaHash;
 
   // Shell export
   const procHash = process.env.CMS_PASS_HASH;
-  if (procHash && isValidBcryptHash(procHash)) return procHash;
+  if (procHash && isValidHash(procHash)) return procHash;
 
   // Local dev fallback — read raw .env file (bypasses dotenv-expand $ corruption)
   try {
@@ -67,10 +67,12 @@ async function getPassHash(): Promise<string> {
 }
 
 /**
- * Validate bcrypt hash: must be 60 chars, start with $2a$ or $2b$ or $2y$
- * Rejects truncated hashes from dotenv-expand corruption.
+ * Validate password hash: supports bcrypt and PBKDF2 Web Crypto formats
  */
-function isValidBcryptHash(hash: string): boolean {
+function isValidHash(hash: string): boolean {
+  if (hash.startsWith('pbkdf2:')) {
+    return hash.split(':').length === 4;
+  }
   return hash.length === 60 && /^\$2[aby]\$/.test(hash);
 }
 
@@ -87,12 +89,101 @@ export async function verifyCredentials(username: string, password: string): Pro
   }
 
   if (username !== envUser) {
-    // Constant-time comparison: always run bcrypt to prevent timing attacks
-    await bcrypt.compare(password, '$2a$12$invalidhashpaddingtopreventshorting');
+    // Constant-time comparison: always run PBKDF2 to prevent timing attacks
+    await verifyPBKDF2(password, 'pbkdf2:100000:73616c7473616c7473616c7473616c74:e7c7a8264ef81ec01c7bb7418a0e5b7b9195b058a9e9a4f4dcf19c4b7264a938');
     return false;
   }
 
+  if (envHash.startsWith('pbkdf2:')) {
+    return verifyPBKDF2(password, envHash);
+  }
   return bcrypt.compare(password, envHash);
+}
+
+// @para-doc [#csa-cms-sec-pbkdf2]
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+// @para-doc [#csa-cms-local-auth-pbkdf2]
+export async function hashPBKDF2(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const passwordBuffer = encoder.encode(password);
+  
+  // Generate random 16-byte salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    passwordBuffer,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    baseKey,
+    256 // 32 bytes (256 bits)
+  );
+  
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return `pbkdf2:100000:${saltHex}:${hashHex}`;
+}
+
+export async function verifyPBKDF2(password: string, hashedPassword: string): Promise<boolean> {
+  try {
+    const parts = hashedPassword.split(':');
+    if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false;
+    
+    const iterations = parseInt(parts[1], 10);
+    const saltHex = parts[2];
+    const hashHex = parts[3];
+    
+    const salt = new Uint8Array(saltHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+    
+    const encoder = new TextEncoder();
+    const passwordBuffer = encoder.encode(password);
+    
+    const baseKey = await crypto.subtle.importKey(
+      'raw',
+      passwordBuffer,
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits', 'deriveKey']
+    );
+    
+    const derivedBits = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: salt,
+        iterations: iterations,
+        hash: 'SHA-256'
+      },
+      baseKey,
+      256
+    );
+    
+    const computedHashHex = Array.from(new Uint8Array(derivedBits))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    return timingSafeEqual(hashHex, computedHashHex);
+  } catch {
+    return false;
+  }
 }
 
 // Cleanup stale rate limit entries every 5 minutes

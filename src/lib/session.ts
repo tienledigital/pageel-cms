@@ -143,4 +143,34 @@ export function hasEnvAuth(): boolean {
   return !!(import.meta.env.CMS_USER);
 }
 
+// @para-doc [#csa-cms-sec-csrf]
+export async function createCsrfToken(sessionId: string, secret: string): Promise<string> {
+  const expiry = Math.floor(Date.now() / 1000) + MAX_AGE;
+  const payload = {
+    sid: sessionId,
+    exp: expiry
+  };
+  const payloadStr = btoa(JSON.stringify(payload));
+  const signature = await hmacSign(payloadStr, secret);
+  return `${payloadStr}.${signature}`;
+}
+
+export async function verifyCsrfToken(csrfToken: string, sessionId: string, secret: string): Promise<boolean> {
+  try {
+    const [payloadStr, signature] = csrfToken.split('.');
+    if (!payloadStr || !signature) return false;
+    
+    const valid = await hmacVerify(payloadStr, signature, secret);
+    if (!valid) return false;
+    
+    const payload = JSON.parse(atob(payloadStr));
+    if (payload.sid !== sessionId) return false;
+    if (payload.exp < Math.floor(Date.now() / 1000)) return false;
+    
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export { COOKIE_NAME };
