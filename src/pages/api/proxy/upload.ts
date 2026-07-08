@@ -9,6 +9,7 @@ import type { APIRoute } from 'astro';
 import { uploadFile, getFileSha, createGitConfig } from '../../../lib/git-client';
 import { verifySession, resolveGitCredentials, COOKIE_NAME } from '../../../lib/session';
 import { isPathAllowed } from '../../../lib/proxy-utils';
+import { validateFileMagicBytes, sanitizeSvg } from '../../../lib/security-utils';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -74,12 +75,37 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Read file as base64
+    // Read file buffer
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
+    const extension = path.split('.').pop() || '';
+
+    // Validate image magic bytes
+    const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp']);
+    if (imageExtensions.has(extension.toLowerCase())) {
+      const isValidMagic = validateFileMagicBytes(bytes, extension);
+      if (!isValidMagic) {
+        return new Response(
+          JSON.stringify({ error: `File verification failed: invalid magic bytes signature for extension ".${extension}"` }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Sanitize SVG content
+    let finalBytes = bytes;
+    if (extension.toLowerCase() === 'svg' || file.type === 'image/svg+xml') {
+      const textDecoder = new TextDecoder('utf-8');
+      const svgContent = textDecoder.decode(bytes);
+      const cleanSvg = sanitizeSvg(svgContent);
+      const textEncoder = new TextEncoder();
+      finalBytes = textEncoder.encode(cleanSvg);
+    }
+
+    // Convert to base64
     let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    for (let i = 0; i < finalBytes.length; i++) {
+      binary += String.fromCharCode(finalBytes[i]);
     }
     const base64Content = btoa(binary);
 
