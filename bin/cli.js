@@ -4,20 +4,52 @@
  * Pageel CMS CLI
  * 
  * Usage:
- *   npx pageel-cms hash <password>    Generate bcrypt hash for CMS_PASS_HASH
+ *   npx pageel-cms hash <password>    Generate PBKDF2 hash for CMS_PASS_HASH
  *   npx pageel-cms hash               Interactive mode (hidden input)
  */
 
-import { hash } from 'bcryptjs';
+import { webcrypto } from 'node:crypto';
 import { createInterface } from 'node:readline';
 
-const COST = 12;
+const crypto = webcrypto;
 const [,, command, value] = process.argv;
 
+async function hashPBKDF2(password) {
+  const encoder = new TextEncoder();
+  const passwordBuffer = encoder.encode(password);
+  
+  // Generate random 16-byte salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    passwordBuffer,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    baseKey,
+    256 // 32 bytes (256 bits)
+  );
+  
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return `pbkdf2:100000:${saltHex}:${hashHex}`;
+}
+
 async function generateHash(password) {
-  const hashed = await hash(password, COST);
+  const hashed = await hashPBKDF2(password);
   console.log('');
-  console.log('✅ Bcrypt hash generated (cost factor: %d)', COST);
+  console.log('✅ PBKDF2 hash generated (iterations: 100000, sha256)');
   console.log('');
   console.log('   %s', hashed);
   console.log('');
@@ -31,8 +63,6 @@ async function interactiveHash() {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   
   return new Promise((resolve) => {
-    // Note: readline doesn't support hidden input natively
-    // Users wanting hidden input should use: npx pageel-cms hash "$(read -s -p 'Password: ' pw && echo $pw)"
     rl.question('Enter password: ', async (password) => {
       rl.close();
       if (!password) {
@@ -47,10 +77,10 @@ async function interactiveHash() {
 
 function showHelp() {
   console.log('');
-  console.log('  Pageel CMS CLI v2.0.0');
+  console.log('  Pageel CMS CLI v2.3.0');
   console.log('');
   console.log('  Usage:');
-  console.log('    npx pageel-cms hash <password>   Generate bcrypt hash');
+  console.log('    npx pageel-cms hash <password>   Generate PBKDF2 hash');
   console.log('    npx pageel-cms hash              Interactive mode');
   console.log('    npx pageel-cms --help             Show this help');
   console.log('');

@@ -2,8 +2,6 @@
  * Auth helpers — bcryptjs password verification + rate limiting
  */
 
-import bcrypt from 'bcryptjs';
-
 // --- Rate Limiting (in-memory, best-effort) ---
 
 interface RateLimitEntry {
@@ -70,10 +68,7 @@ async function getPassHash(): Promise<string> {
  * Validate password hash: supports bcrypt and PBKDF2 Web Crypto formats
  */
 function isValidHash(hash: string): boolean {
-  if (hash.startsWith('pbkdf2:')) {
-    return hash.split(':').length === 4;
-  }
-  return hash.length === 60 && /^\$2[aby]\$/.test(hash);
+  return hash.startsWith('pbkdf2:') && hash.split(':').length === 4;
 }
 
 /**
@@ -97,7 +92,7 @@ export async function verifyCredentials(username: string, password: string): Pro
   if (envHash.startsWith('pbkdf2:')) {
     return verifyPBKDF2(password, envHash);
   }
-  return bcrypt.compare(password, envHash);
+  return false;
 }
 
 // @para-doc [#csa-cms-sec-pbkdf2]
