@@ -109,8 +109,15 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
   // Redirect browser to SaaS Gateway GET logout URL to clear domain cookies
   const workerUrl = getWorkerUrl(env);
   const origin = new URL(request.url).origin;
+  const redirectUrl = `${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`;
 
-  const response = redirect(`${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`);
+  const response = new Response(null, {
+    status: 302,
+    headers: new Headers({
+      'Location': redirectUrl,
+      'Content-Type': 'text/plain',
+    }),
+  });
 
   // Bulletproof fallback: manually append expired Set-Cookie headers for both Strict and Lax SameSite configurations
   const secureFlag = isProd ? '; Secure' : '';
