@@ -101,7 +101,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, clientAddress
     cookies.set(cookieOpts.name, sessionToken, {
       httpOnly: cookieOpts.httpOnly,
       secure: cookieOpts.secure,
-      sameSite: cookieOpts.sameSite,
+      sameSite: 'lax', // Must match callback.ts SSO flow to avoid dual-cookie SameSite mismatch
       path: cookieOpts.path,
       maxAge: cookieOpts.maxAge,
     });

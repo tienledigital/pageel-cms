@@ -126,7 +126,7 @@ export function getSessionCookieOptions(isProd: boolean) {
     name: COOKIE_NAME,
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict' as const,
+    sameSite: 'lax' as const, // Must be 'lax' for SSO redirect flows; 'strict' blocks cross-origin redirects
     path: '/',
     maxAge: MAX_AGE,
   };

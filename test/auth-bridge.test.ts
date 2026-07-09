@@ -209,11 +209,18 @@ describe('auth-bridge TDD tests', () => {
       } as any;
 
       const response = await handleLogout(context);
-      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_session', '', expect.objectContaining({ expires: expect.any(Date) }));
-      expect(context.cookies.set).toHaveBeenCalledWith('pageel_cms_csrf', '', expect.objectContaining({ expires: expect.any(Date) }));
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('https://api.example.com/api/auth/logout?return_url=');
       expect(response.headers.get('Location')).toContain(encodeURIComponent('http://localhost/login'));
+
+      // Verify cookies are cleared via raw Set-Cookie headers (not cookies.set())
+      // Astro does not merge cookies.set() into raw Response objects
+      const setCookieHeaders = response.headers.getSetCookie();
+      const sessionClears = setCookieHeaders.filter(h => h.startsWith('pageel_cms_session=;'));
+      const csrfClears = setCookieHeaders.filter(h => h.startsWith('pageel_cms_csrf=;'));
+      expect(sessionClears.length).toBeGreaterThanOrEqual(2); // Strict + Lax variants
+      expect(csrfClears.length).toBeGreaterThanOrEqual(2);
+      expect(sessionClears[0]).toContain('Max-Age=0');
     });
   });
 

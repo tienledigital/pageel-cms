@@ -88,43 +88,37 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
 
   const isProd = import.meta.env.PROD;
 
-  // Clear session cookie with identical flags (Secure, SameSite)
-  cookies.set(COOKIE_NAME, '', {
-    path: '/',
-    expires: new Date(0),
-    httpOnly: true,
-    secure: isProd,
-    sameSite: 'lax',
-  });
-
-  // Clear CSRF cookie
-  cookies.set('pageel_cms_csrf', '', {
-    path: '/',
-    expires: new Date(0),
-    httpOnly: false,
-    secure: isProd,
-    sameSite: 'lax',
-  });
+  // IMPORTANT: Do NOT use cookies.set() here — Astro does not merge
+  // cookies.set() headers into a raw `new Response()`. Only Astro's
+  // redirect() triggers header merging. We must set all Set-Cookie
+  // headers directly on the Response object.
 
   // Redirect browser to SaaS Gateway GET logout URL to clear domain cookies
   const workerUrl = getWorkerUrl(env);
   const origin = new URL(request.url).origin;
   const redirectUrl = `${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`;
 
+  const secureFlag = isProd ? '; Secure' : '';
+  const expireDirective = 'Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
+
   const response = new Response(null, {
     status: 302,
     headers: new Headers({
       'Location': redirectUrl,
-      'Content-Type': 'text/plain',
     }),
   });
 
-  // Bulletproof fallback: manually append expired Set-Cookie headers for both Strict and Lax SameSite configurations
-  const secureFlag = isProd ? '; Secure' : '';
-  response.headers.append('Set-Cookie', `${COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly${secureFlag}; SameSite=Strict`);
-  response.headers.append('Set-Cookie', `${COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly${secureFlag}; SameSite=Lax`);
-  response.headers.append('Set-Cookie', `pageel_cms_csrf=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;${secureFlag}; SameSite=Strict`);
-  response.headers.append('Set-Cookie', `pageel_cms_csrf=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;${secureFlag}; SameSite=Lax`);
+  // Clear session cookie for BOTH SameSite variants.
+  // login.ts sets SameSite=Strict, callback.ts sets SameSite=Lax.
+  // Browser treats these as separate cookies — must expire both.
+  response.headers.append('Set-Cookie', `${COOKIE_NAME}=; Path=/; ${expireDirective}; HttpOnly${secureFlag}; SameSite=Strict`);
+  response.headers.append('Set-Cookie', `${COOKIE_NAME}=; Path=/; ${expireDirective}; HttpOnly${secureFlag}; SameSite=Lax`);
+  response.headers.append('Set-Cookie', `${COOKIE_NAME}=; Path=/; ${expireDirective}; HttpOnly${secureFlag}; SameSite=None`);
+
+  // Clear CSRF cookie for both variants
+  response.headers.append('Set-Cookie', `pageel_cms_csrf=; Path=/; ${expireDirective}${secureFlag}; SameSite=Strict`);
+  response.headers.append('Set-Cookie', `pageel_cms_csrf=; Path=/; ${expireDirective}${secureFlag}; SameSite=Lax`);
+  response.headers.append('Set-Cookie', `pageel_cms_csrf=; Path=/; ${expireDirective}${secureFlag}; SameSite=None`);
 
   return response;
 };
