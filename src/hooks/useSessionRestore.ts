@@ -32,9 +32,9 @@ export function useSessionRestore() {
 
     const csrfToken = getCookie('pageel_cms_csrf');
     if (csrfToken) {
-      // Proactively clear CSRF cookie on client side first
-      document.cookie = "pageel_cms_csrf=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax;";
-      document.cookie = "pageel_cms_csrf=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict;";
+      // NOTE: Do NOT clear the CSRF cookie here — the server needs it
+      // to validate the logout request. Server response clears cookies
+      // via Set-Cookie headers after successful CSRF validation.
 
       const form = document.createElement('form');
       form.method = 'POST';
