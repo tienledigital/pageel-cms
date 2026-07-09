@@ -493,5 +493,34 @@ describe('Edge Security Hardening TDD Tests', () => {
       expect(csrfClears.length).toBeGreaterThanOrEqual(2);
       expect(sessionClears[0]).toContain('Max-Age=0');
     });
+
+    it('should redirect to /login directly in Server Mode when SSO envs are missing', async () => {
+      const sessionToken = 'payload.session-signature-123';
+      const validCsrf = await createCsrfToken('session-signature-123', secretKey);
+
+      const context = {
+        request: new Request('http://localhost/api/auth/logout', {
+          method: 'POST',
+          headers: { 'x-csrf-token': validCsrf },
+        }),
+        cookies: {
+          get: vi.fn().mockImplementation((name) => {
+            if (name === 'pageel_cms_session') return { value: sessionToken };
+            if (name === 'pageel_cms_csrf') return { value: validCsrf };
+            return null;
+          }),
+        },
+        locals: {},
+        redirect: vi.fn().mockImplementation((url) => new Response(null, { status: 302, headers: { Location: url } })),
+      } as any;
+
+      const response = await handleLogoutPOST(context);
+      expect(response.status).toBe(302);
+      expect(response.headers.get('Location')).toBe('/login');
+
+      const setCookieHeaders = response.headers.getSetCookie();
+      const sessionClears = setCookieHeaders.filter(h => h.startsWith('pageel_cms_session=;'));
+      expect(sessionClears.length).toBeGreaterThanOrEqual(2);
+    });
   });
 });

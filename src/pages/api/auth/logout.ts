@@ -4,6 +4,7 @@ import { getWorkerUrl } from '../../../lib/auth-bridge';
 
 // @para-doc [#csa-cms-sdk-logout-webhook]
 // @para-doc [#csa-cms-app-int-logout]
+// @para-doc [#csa-cms-client-logout-post]
 export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => {
   const sessionToken = cookies.get(COOKIE_NAME)?.value;
   const csrfCookie = cookies.get('pageel_cms_csrf')?.value;
@@ -93,10 +94,21 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
   // redirect() triggers header merging. We must set all Set-Cookie
   // headers directly on the Response object.
 
-  // Redirect browser to SaaS Gateway GET logout URL to clear domain cookies
-  const workerUrl = getWorkerUrl(env);
-  const origin = new URL(request.url).origin;
-  const redirectUrl = `${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`;
+  const hasSso = !!(
+    (env.PAGEEL_WORKER_URL && env.PAGEEL_WORKER_URL.trim().length > 0) ||
+    (env.PAGEEL_APP_URL && env.PAGEEL_APP_URL.trim().length > 0) ||
+    (typeof process !== 'undefined' && (
+      (process.env.PAGEEL_WORKER_URL && process.env.PAGEEL_WORKER_URL.trim().length > 0) ||
+      (process.env.PAGEEL_APP_URL && process.env.PAGEEL_APP_URL.trim().length > 0)
+    ))
+  );
+
+  let redirectUrl = '/login';
+  if (hasSso) {
+    const workerUrl = getWorkerUrl(env);
+    const origin = new URL(request.url).origin;
+    redirectUrl = `${workerUrl}/api/auth/logout?return_url=${encodeURIComponent(origin + '/login')}`;
+  }
 
   const secureFlag = isProd ? '; Secure' : '';
   const expireDirective = 'Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
