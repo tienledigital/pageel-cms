@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { COOKIE_NAME, verifyCsrfToken } from '../../../lib/session';
+import { COOKIE_NAME, verifyCsrfToken, normalizeBase64 } from '../../../lib/session';
 import { getWorkerUrl } from '../../../lib/auth-bridge';
 
 // @para-doc [#csa-cms-sdk-logout-webhook]
@@ -8,14 +8,35 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
   const sessionToken = cookies.get(COOKIE_NAME)?.value;
   const csrfCookie = cookies.get('pageel_cms_csrf')?.value;
 
+  const logData = (code: string, data: any) => {
+    console.warn(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      error_code: code,
+      component: 'API_LOGOUT',
+      ...data
+    }));
+  };
+
+  // Check-LOG-1: Request received stubs
+  logData('AUTH_LOGOUT_REQUEST_RECEIVED', {
+    has_session: !!sessionToken,
+    session_len: sessionToken?.length || 0,
+    has_csrf_cookie: !!csrfCookie,
+    csrf_cookie_len: csrfCookie?.length || 0,
+  });
+
   if (!sessionToken || !csrfCookie) {
+    logData('AUTH_LOGOUT_MISSING_CREDS', {
+      has_session: !!sessionToken,
+      has_csrf_cookie: !!csrfCookie,
+    });
     return new Response(JSON.stringify({ error: 'Forbidden: Missing credentials' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const sessionId = (sessionToken.split('.')[1] || '').replace(/ /g, '+');
+  const sessionId = normalizeBase64(sessionToken.split('.')[1] || '');
   const csrfHeader = request.headers.get('x-csrf-token') || '';
   
   const url = new URL(request.url);
@@ -27,14 +48,38 @@ export const POST: APIRoute = async ({ cookies, redirect, request, locals }) => 
     csrfBody = formData.get('csrf_token')?.toString() || '';
   } catch {}
 
-  const submittedCsrf = decodeURIComponent(csrfHeader || csrfQuery || csrfBody).replace(/ /g, '+');
-  const decodedCsrfCookie = decodeURIComponent(csrfCookie || '').replace(/ /g, '+');
+  const submittedCsrf = normalizeBase64(csrfHeader || csrfQuery || csrfBody);
+  const decodedCsrfCookie = normalizeBase64(csrfCookie || '');
   const env = (locals as any)?.runtime?.env || {};
   const csrfSecret = env.CMS_SECRET || import.meta.env.CMS_SECRET || 'fallback-secret-key-16-chars';
 
-  const isValidCsrf = (await verifyCsrfToken(submittedCsrf, sessionId, csrfSecret)) && (submittedCsrf === decodedCsrfCookie);
+  // Check-LOG-2: CSRF resolution metadata
+  logData('AUTH_LOGOUT_CSRF_RESOLUTION', {
+    sessionId_len: sessionId.length,
+    submittedCsrf_len: submittedCsrf.length,
+    decodedCsrfCookie_len: decodedCsrfCookie.length,
+    sessionId_snippet: sessionId ? `${sessionId.substring(0, 5)}...${sessionId.substring(sessionId.length - 5)}` : '',
+    submittedCsrf_snippet: submittedCsrf.includes('.') ? `${submittedCsrf.split('.')[0].substring(0, 5)}...${submittedCsrf.split('.')[1]?.substring(0, 5)}` : submittedCsrf.substring(0, 10),
+    decodedCsrfCookie_snippet: decodedCsrfCookie.includes('.') ? `${decodedCsrfCookie.split('.')[0].substring(0, 5)}...${decodedCsrfCookie.split('.')[1]?.substring(0, 5)}` : decodedCsrfCookie.substring(0, 10),
+  });
+
+  const verifyResult = await verifyCsrfToken(submittedCsrf, sessionId, csrfSecret);
+  const directMatch = submittedCsrf === decodedCsrfCookie;
+
+  // Check-LOG-3: Verification results
+  logData('AUTH_LOGOUT_VERIFICATION_RESULT', {
+    verifyCsrfToken_ok: verifyResult,
+    directMatch_ok: directMatch,
+    secret_len: csrfSecret.length,
+  });
+
+  const isValidCsrf = verifyResult && directMatch;
 
   if (!isValidCsrf) {
+    logData('AUTH_LOGOUT_INVALID_CSRF', {
+      verifyCsrfToken_ok: verifyResult,
+      directMatch_ok: directMatch,
+    });
     return new Response(JSON.stringify({ error: 'Forbidden: Invalid CSRF token' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },

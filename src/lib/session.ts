@@ -12,6 +12,20 @@
 const COOKIE_NAME = 'pageel_cms_session';
 const MAX_AGE = 86400; // 24 hours
 
+export function normalizeBase64(str: string): string {
+  try {
+    let decoded = str;
+    while (decoded.includes('%')) {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    }
+    return decoded.replace(/ /g, '+');
+  } catch {
+    return str.replace(/ /g, '+');
+  }
+}
+
 function getSecret(): string {
   const secret = import.meta.env.CMS_SECRET;
   if (!secret || secret.length < 16) {
@@ -86,7 +100,7 @@ export async function createSession(options: CreateSessionOptions): Promise<stri
 export async function verifySession(token: string): Promise<SessionPayload | null> {
   try {
     const secret = getSecret();
-    const sanitizedToken = token.replace(/ /g, '+');
+    const sanitizedToken = normalizeBase64(token);
     const [payloadStr, signature] = sanitizedToken.split('.');
     if (!payloadStr || !signature) return null;
 
@@ -162,7 +176,7 @@ export async function createCsrfToken(sessionId: string, secret: string): Promis
 
 export async function verifyCsrfToken(csrfToken: string, sessionId: string, secret: string): Promise<boolean> {
   try {
-    const sanitizedToken = csrfToken.replace(/ /g, '+');
+    const sanitizedToken = normalizeBase64(csrfToken);
     const [payloadStr, signature] = sanitizedToken.split('.');
     if (!payloadStr || !signature) return false;
     
@@ -170,7 +184,8 @@ export async function verifyCsrfToken(csrfToken: string, sessionId: string, secr
     if (!valid) return false;
     
     const payload = JSON.parse(atob(payloadStr));
-    if (payload.sid !== sessionId) return false;
+    const cleanSessionId = normalizeBase64(sessionId);
+    if (payload.sid !== cleanSessionId) return false;
     if (payload.exp < Math.floor(Date.now() / 1000)) return false;
     
     return true;
