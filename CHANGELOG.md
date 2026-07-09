@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.2] - 2026-07-09
+
+### Fixed
+
+- **Server Mode Logout Redirect Crash**: Fixed a 500 server crash during logout when running in Server Mode (local mode with SSO disabled). Now checks if SSO environment variables are active; if not, performs a local session and CSRF cookie clearance and redirects directly to `/login`.
+
+## [2.3.1] - 2026-07-08
+
+### Fixed
+
+- **Vercel/Edge Logout & CSRF Issues**: Resolved a series of critical logout issues on serverless/edge environments.
+  - Implemented custom `302` Response builder for logout to prevent middleware cookie stripping.
+  - Expired session and CSRF cookies under both `Strict` and `Lax` SameSite configurations on logout.
+  - Fixed CSRF validation errors (403 Forbidden) by normalizing spaces to plus, URL decoding tokens, and handling base64 padding.
+  - Resolved logout loop caused by dual SameSite cookie mismatch and Astro raw Response bypass.
+  - Switched client-side logout to submit a POST form with CSRF token to prevent 405 Method Not Allowed.
+  - Handled missing CSRF cookies gracefully by navigating to `/login?logout=true` to clear the session cookie server-side.
+  - Renamed CSRF cookie to `pageel_cms_csrf` to prevent namespace collisions.
+
 ## [2.3.0] - 2026-07-08
 
 ### Added

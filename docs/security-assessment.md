@@ -1,15 +1,15 @@
-# Security Assessment — Pageel CMS v2.0.0
+# Security Assessment — Pageel CMS v2.3.2
 
-> **Date:** 2026-03-26
+> **Date:** 2026-07-09
 > **Assessor:** AI-assisted (with human review)
 > **Scope:** Targeted assessment — auth flow, session management, proxy layer
-> **Status:** ✅ Beta-ready (see Recommendations for v2.1)
+> **Status:** ✅ Production-ready
 
 ---
 
 ## Summary
 
-Pageel CMS v2.0 uses a server-side authentication model where the client never directly
+Pageel CMS uses a server-side authentication model where the client never directly
 accesses Git APIs. All Git operations go through authenticated proxy endpoints. This
 assessment verifies the security posture of the auth flow, session management, and
 API proxy layer.
@@ -24,11 +24,11 @@ API proxy layer.
 
 | Control | Implementation | Status |
 |:--------|:---------------|:-------|
-| Password hashing | bcryptjs, cost factor 12 | ✅ Strong |
-| Timing attack prevention | Constant-time comparison (dummy bcrypt on wrong username) | ✅ `auth.ts:83` |
+| Password hashing | Web Crypto API PBKDF2 (100,000 iterations, SHA-256) | ✅ Strong |
+| Timing attack prevention | Constant-time comparison (dummy PBKDF2 run on wrong username) | ✅ `auth.ts:87-88` |
 | Brute force protection | In-memory rate limit: 5 attempts/min/IP | ✅ `auth.ts:21-36` |
 | Password storage | Env var only (never in code/DB) | ✅ |
-| Hash validation | `isValidBcryptHash()` — length 60 + prefix `$2[aby]$` | ✅ `auth.ts:75-78` |
+| Hash validation | `isValidPasswordHash()` — supports `pbkdf2:100000:salt_hex:hash_hex` format | ✅ `auth.ts:68-71` |
 | dotenv-expand bypass | 3-tier resolution: import.meta.env → process.env → raw .env | ✅ `auth.ts:46-67` |
 
 **Finding:** None. Auth implementation follows best practices.
@@ -48,6 +48,7 @@ API proxy layer.
 | Session fixation | New session created per login (no reuse) | ✅ |
 | Stale session detection | Middleware Layer 3 — validates credentials completeness | ✅ BUG-19 fix |
 | Mode transition safety | Cookie auto-cleared when env changes invalidate credentials | ✅ |
+| Multi-mode logout safety | SSO mode redirects to SaaS Gateway GET logout URL to clear domain cookies; Server Mode clears local session/CSRF cookies and redirects to `/login` directly. Cookie deletion uses manual `Set-Cookie` headers on response for Edge/Vercel compatibility. | ✅ `logout.ts` |
 
 **Finding A (v2.1):** Dynamic credentials (token, repo) stored as base64 in cookie payload.
 HMAC ensures **integrity** but not **confidentiality**. If an attacker obtains the raw cookie
@@ -73,8 +74,10 @@ env vars, existing sessions remain valid until expiration (24h).
 | Cross-site form submission | `SameSite=Strict` cookie | ✅ |
 | Cross-origin API calls | Cookie not sent cross-origin (SameSite) | ✅ |
 | Login form | Standard HTML form POST to same origin | ✅ |
+| State-changing API actions | `pageel_cms_csrf` token generated on login/SSO handshake and verified on POST requests (Double Submit Cookie pattern) | ✅ `auth.ts`, `logout.ts`, `upload.ts` |
+| Logout mechanism | POST-only endpoint requiring valid CSRF verification | ✅ `logout.ts` |
 
-**Finding:** None. `SameSite=Strict` is the strongest CSRF protection available.
+**Finding:** None. CSRF tokens combined with `SameSite=Strict` cookies provide comprehensive protection.
 
 ---
 
@@ -160,4 +163,4 @@ via Astro middleware in v2.1.
 
 ---
 
-_Assessment completed: 2026-03-26_
+_Assessment completed: 2026-07-09_

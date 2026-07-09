@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> **Version**: 2.3.0 | **Updated**: 2026-07-08
+> **Version**: 2.3.2 | **Updated**: 2026-07-09
 
 ## Prerequisites
 
