@@ -49,7 +49,9 @@ export function useSessionRestore() {
       document.body.appendChild(form);
       form.submit();
     } else {
-      window.location.href = '/login';
+      // CSRF cookie missing (Astro may drop it on SSO callback redirect).
+      // Navigate to login with logout flag so the server clears the session cookie.
+      window.location.href = '/login?logout=true';
     }
   }, [clearAuth]);
 
