@@ -161,6 +161,7 @@ const PostList: React.FC<PostListProps> = ({
   const [visibleFields, setVisibleFields] = useState<string[]>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({ '__name__': 35 });
 
+  // @para-doc [#csa-new-post-state]
   const handleCreateNewPost = useCallback(() => {
       const defaultFrontmatter: Record<string, any> = {
           title: '',
@@ -578,6 +579,7 @@ const PostList: React.FC<PostListProps> = ({
                 </button>
             </div>
 
+            {/* @para-doc [#csa-post-creation-trigger] */}
             <button
                 onClick={handleCreateNewPost}
                 className="flex items-center justify-center px-3 py-1.5 bg-white hover:bg-gray-50 border border-notion-border text-notion-text text-xs font-medium rounded-sm transition-colors shadow-sm"

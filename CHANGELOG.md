@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0] - 2026-07-10
+
+### Added
+
+- **Direct Post Creation**: Implemented direct blank post creation from the CMS dashboard UI. Users can compose, customize, and save new markdown posts directly to the Git repository.
+- **Path and File Safety**: Implemented Vietnamese slug conversion mapping "đ/Đ" to "d", custom character sanitization (a-z0-9- only), directory path validation, and 409 file collision detection before writing.
+- **Diagnostic Logging**: Added structured JSON diagnostic loggers to trace post creation operations.
+
+### Refactored
+
+- **React Memoization**: Applied strict React callbacks (`useCallback`/`useMemo`) for git service calls and editor updates to prevent render loops.
+
 ## [2.3.2] - 2026-07-09
 
 ### Fixed

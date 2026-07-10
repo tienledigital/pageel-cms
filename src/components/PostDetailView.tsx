@@ -234,6 +234,7 @@ const GalleryThumbnail: React.FC<{
 };
 
 const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete, gitService, repo, projectType, domainUrl, onUpdate, imagesPath, imageFileTypes, onAction }) => {
+  // @para-doc [#csa-new-post-editor-mode]
   const [activeTab, setActiveTab] = useState<'edit' | 'code' | 'preview'>('edit');
   const { t, language } = useI18n();
   const pluginConfig = usePluginConfig();
@@ -338,7 +339,7 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
       setIsSaving(true);
       
       // 1. Validate empty title (csa-validation-title)
-      /* @para-spec csa-validation-title */
+      // @para-doc [#csa-validation-title]
       if (!editableFrontmatter.title || String(editableFrontmatter.title).trim() === "") {
           logDiagnosticWarn('POST_CREATION_MISSING_TITLE', 'User attempted to save with empty title.');
           alert(t('postList.error.emptyTitle'));
@@ -362,13 +363,13 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
           // 2. Create Mode
           if (post.sha === "") {
               // 2a. Generate slug and filename (csa-filename-slugify)
-              /* @para-spec csa-filename-slugify */
+              // @para-doc [#csa-filename-slugify]
               const slug = slugify(String(editableFrontmatter.title));
               const fileExtension = 'md'; // AC-5 default
               const filename = `${slug}.${fileExtension}`;
               
               // 2b. Sanitize path to prevent Path Traversal (csa-path-safety)
-              /* @para-spec csa-path-safety */
+              // @para-doc [#csa-path-safety]
               if (!/^[a-z0-9-]+$/.test(slug)) {
                   logDiagnosticWarn('POST_CREATION_INVALID_SLUG', 'Invalid characters in title for filename generation.', { title: editableFrontmatter.title, slug });
                   alert(t('postList.error.invalidSlug'));
@@ -384,7 +385,7 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
               logDiagnostic('POST_CREATION_START', 'Attempting to create a new post.', { filename, newPath });
 
               // 2c. Check for file collision (csa-filename-collision)
-              /* @para-spec csa-filename-collision */
+              // @para-doc [#csa-filename-collision]
               const existingSha = await gitService.getFileSha(newPath);
               if (existingSha) {
                   logDiagnosticWarn('POST_CREATION_DUPLICATE_FILE', 'File collision detected.', { newPath, existingSha });
@@ -395,7 +396,7 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
               logDiagnostic('POST_CREATION_NO_CONFLICT', 'No collision. Safe to write.', { newPath });
 
               // 2d. Create file on Git (csa-create-file-git)
-              /* @para-spec csa-create-file-git */
+              // @para-doc [#csa-create-file-git]
               const commitMsg = `feat(content): create post "${filename}"`;
               await gitService.createFileFromString(newPath, finalContent, commitMsg);
               logDiagnostic('POST_CREATION_WRITE_SUCCESS', 'Successfully wrote post to Git.', { newPath });
@@ -405,7 +406,7 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
               logDiagnostic('POST_CREATION_FETCH_SHA', 'Fetched new SHA for edit mode redirection.', { newPath, newSha });
 
               // 2f. Redirect to edit mode and trigger callbacks (csa-post-creation-complete)
-              /* @para-spec csa-post-creation-complete */
+              // @para-doc [#csa-post-creation-complete]
               if (newSha) {
                   post.path = newPath;
                   post.sha = newSha;
