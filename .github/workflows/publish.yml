@@ -101,7 +101,7 @@ jobs:
           if npm info @pageel/plugin-types@$CURRENT_VERSION >/dev/null 2>&1; then
             echo "⚠️ @pageel/plugin-types@$CURRENT_VERSION is already published. Skipping."
           else
-            npm publish -w packages/plugin-types --provenance --access public --tag beta
+            npm publish -w packages/plugin-types --provenance --access public --tag latest
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -113,7 +113,7 @@ jobs:
           if npm info @pageel/plugin-mdx@$CURRENT_VERSION >/dev/null 2>&1; then
             echo "⚠️ @pageel/plugin-mdx@$CURRENT_VERSION is already published. Skipping."
           else
-            npm publish -w packages/plugin-mdx --provenance --access public --tag beta
+            npm publish -w packages/plugin-mdx --provenance --access public --tag latest
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -125,7 +125,7 @@ jobs:
           if npm info @pageel/cms@$CURRENT_VERSION >/dev/null 2>&1; then
             echo "⚠️ @pageel/cms@$CURRENT_VERSION is already published. Skipping."
           else
-            npm publish -w packages/cms-bridge --provenance --access public --tag beta
+            npm publish -w packages/cms-bridge --provenance --access public --tag latest
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
