@@ -40,6 +40,7 @@ A lightweight, self-hosted Content Management System that uses your **GitHub** r
 | Feature                   | Description                                                                             |
 | :------------------------ | :-------------------------------------------------------------------------------------- |
 | 📚 **Multi-Collection**   | Manage multiple content types (Blog, Docs, Projects) in one workspace                   |
+| 📝 **Direct Post**        | Create blank posts directly from the UI toolbar and save them to Git                     |
 | 🏷️ **Typed Templates**    | Define schema with **String**, **Date**, **Boolean**, **Number**, **Array**, **Object** |
 | 🔍 **Smart Filtering**    | Auto-generated filter UI based on your template types                                   |
 | 🧩 **Plugin System**      | Slot-based WYSIWYG editor plugins (MDXEditor included) with CSS isolation               |

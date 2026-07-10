@@ -40,6 +40,7 @@ Hệ quản trị nội dung (CMS) nhẹ, tự host, sử dụng repository **Gi
 | Tính năng                 | Mô tả                                                                                               |
 | :------------------------ | :-------------------------------------------------------------------------------------------------- |
 | 📚 **Multi-Collection**   | Quản lý nhiều loại nội dung (Blog, Docs, Projects) trong một workspace                              |
+| 📝 **Tạo bài trực tiếp**  | Tạo mới bài viết trống trực tiếp từ thanh công cụ UI và lưu lên Git                                 |
 | 🏷️ **Typed Templates**    | Định nghĩa schema với các kiểu **String**, **Date**, **Boolean**, **Number**, **Array**, **Object** |
 | 🔍 **Smart Filtering**    | Tự động tạo bộ lọc thông minh dựa trên template                                                     |
 | 🧩 **Plugin System**      | Hệ thống plugin slot-based cho WYSIWYG editor (MDXEditor) với CSS isolation                          |
