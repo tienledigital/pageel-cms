@@ -11,7 +11,7 @@ import { ClockIcon } from './icons/ClockIcon';
 import { GithubRepo, IGitService } from '../types';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { ImageIcon } from './icons/ImageIcon';
-import { updateFrontmatter } from '../utils/parsing';
+import { updateFrontmatter, slugify } from '../utils/parsing';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { resolveImageSource } from '../utils/github';
 import { PlusIcon } from './icons/PlusIcon';
@@ -49,6 +49,35 @@ interface PostDetailViewProps {
   imageFileTypes: string;
   onAction: () => void;
 }
+
+// --- Diagnostic structured loggers ---
+const logDiagnostic = (code: string, message: string, data?: any) => {
+    console.info(JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'INFO',
+        code,
+        message,
+        ...data
+    }));
+};
+const logDiagnosticWarn = (code: string, message: string, data?: any) => {
+    console.warn(JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'WARN',
+        code,
+        message,
+        ...data
+    }));
+};
+const logDiagnosticError = (code: string, message: string, data?: any) => {
+    console.error(JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'ERROR',
+        code,
+        message,
+        ...data
+    }));
+};
 
 // --- Cover Image Component (Handles Auth/Lazy loading) ---
 const CoverImage: React.FC<{ 
@@ -304,33 +333,105 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
       setMissingFields(prev => prev.filter(k => k !== key));
   };
 
-  const handleSave = async () => {
-      if (!isDirty) return;
+  const handleSave = useCallback(async () => {
+      if (!isDirty && post.sha !== "") return;
       setIsSaving(true);
+      
+      // 1. Validate empty title (csa-validation-title)
+      /* @para-spec csa-validation-title */
+      if (!editableFrontmatter.title || String(editableFrontmatter.title).trim() === "") {
+          logDiagnosticWarn('POST_CREATION_MISSING_TITLE', 'User attempted to save with empty title.');
+          alert(t('postList.error.emptyTitle'));
+          setIsSaving(false);
+          return;
+      }
+
       try {
           let currentBody = editableBody;
-          // Lấy nội dung mới nhất từ editor nếu đang ở tab edit
+          // Get latest content from markdown editor if edit tab is active
           if (activeTab === 'edit' && editorRef.current) {
               const latestMd = editorRef.current.getMarkdown();
               if (latestMd !== undefined) {
                   currentBody = latestMd;
-                  setEditableBody(latestMd); // Đồng bộ lại state phòng trường hợp user chuyển tab sau đó
+                  setEditableBody(latestMd); // Sync state in case user changes tabs later
               }
           }
           
           const finalContent = updateFrontmatter(currentBody, editableFrontmatter);
+
+          // 2. Create Mode
+          if (post.sha === "") {
+              // 2a. Generate slug and filename (csa-filename-slugify)
+              /* @para-spec csa-filename-slugify */
+              const slug = slugify(String(editableFrontmatter.title));
+              const fileExtension = 'md'; // AC-5 default
+              const filename = `${slug}.${fileExtension}`;
+              
+              // 2b. Sanitize path to prevent Path Traversal (csa-path-safety)
+              /* @para-spec csa-path-safety */
+              if (!/^[a-z0-9-]+$/.test(slug)) {
+                  logDiagnosticWarn('POST_CREATION_INVALID_SLUG', 'Invalid characters in title for filename generation.', { title: editableFrontmatter.title, slug });
+                  alert(t('postList.error.invalidSlug'));
+                  setIsSaving(false);
+                  return;
+              }
+              
+              const { getActiveCollection } = useCollectionStore.getState();
+              const activeCollection = getActiveCollection();
+              const postsPath = activeCollection?.postsPath || '';
+              const newPath = postsPath ? `${postsPath}/${filename}` : filename;
+              
+              logDiagnostic('POST_CREATION_START', 'Attempting to create a new post.', { filename, newPath });
+
+              // 2c. Check for file collision (csa-filename-collision)
+              /* @para-spec csa-filename-collision */
+              const existingSha = await gitService.getFileSha(newPath);
+              if (existingSha) {
+                  logDiagnosticWarn('POST_CREATION_DUPLICATE_FILE', 'File collision detected.', { newPath, existingSha });
+                  alert(t('postList.error.duplicateFile'));
+                  setIsSaving(false);
+                  return;
+              }
+              logDiagnostic('POST_CREATION_NO_CONFLICT', 'No collision. Safe to write.', { newPath });
+
+              // 2d. Create file on Git (csa-create-file-git)
+              /* @para-spec csa-create-file-git */
+              const commitMsg = `feat(content): create post "${filename}"`;
+              await gitService.createFileFromString(newPath, finalContent, commitMsg);
+              logDiagnostic('POST_CREATION_WRITE_SUCCESS', 'Successfully wrote post to Git.', { newPath });
+
+              // 2e. Fetch new file SHA to update local state (AI-3 / Phase 3)
+              const newSha = await gitService.getFileSha(newPath);
+              logDiagnostic('POST_CREATION_FETCH_SHA', 'Fetched new SHA for edit mode redirection.', { newPath, newSha });
+
+              // 2f. Redirect to edit mode and trigger callbacks (csa-post-creation-complete)
+              /* @para-spec csa-post-creation-complete */
+              if (newSha) {
+                  post.path = newPath;
+                  post.sha = newSha;
+                  post.name = filename;
+              }
+
+              onAction(); // Trigger sync
+              onUpdate(); // Refresh parent list
+              setIsDirty(false);
+              setIsSaving(false);
+              return;
+          }
+
+          // 3. Edit Mode (normal updates)
           const commitMessage = `fix(content): update post "${post.name}" from editor`;
-          
           await gitService.updateFileContent(post.path, finalContent, commitMessage, post.sha);
           onAction(); // Trigger sync
-          onUpdate(); // Refresh parent list logic if needed (e.g. update list cache)
+          onUpdate(); // Refresh parent list logic
           setIsDirty(false);
       } catch (e) {
+          logDiagnosticError('POST_CREATION_GIT_FAIL', 'Failed to save post.', { error: e instanceof Error ? e.message : String(e) });
           alert(`Failed to save: ${e instanceof Error ? e.message : String(e)}`);
       } finally {
           setIsSaving(false);
       }
-  };
+  }, [isDirty, post, editableFrontmatter, editableBody, activeTab, gitService, onAction, onUpdate, t]);
 
   // --- External Actions (Update File / Image) ---
   
@@ -917,32 +1018,36 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
                 </button>
                 <span className="text-notion-border text-lg font-light">|</span>
                 <div className="flex items-center text-sm text-notion-muted truncate">
-                        <span className="truncate font-medium text-notion-text text-sm max-w-[200px]">{editableFrontmatter.title || post.name}</span>
+                        <span className="truncate font-medium text-notion-text text-sm max-w-[200px]">{post.sha === "" ? t('postList.createButton') : (editableFrontmatter.title || post.name)}</span>
                 </div>
             </div>
             
             <div className="flex items-center space-x-2">
                 {/* Quick Actions */}
-                <button
-                    onClick={handleUpdateFile}
-                    disabled={isUploading}
-                    className="flex items-center px-2 py-1 text-notion-muted hover:text-notion-text hover:bg-notion-hover rounded-sm text-xs font-medium transition-colors"
-                    title={t('postList.updateFile')}
-                >
-                    <DocumentIcon className="w-3.5 h-3.5 mr-1" />
-                    <span className="hidden sm:inline">Update File</span>
-                </button>
-                <button
-                    onClick={handleUpdateImage}
-                    disabled={isUploading}
-                    className="flex items-center px-2 py-1 text-notion-muted hover:text-notion-text hover:bg-notion-hover rounded-sm text-xs font-medium transition-colors"
-                    title={t('postList.updateImage')}
-                >
-                    <ImageIcon className="w-3.5 h-3.5 mr-1" />
-                    <span className="hidden sm:inline">Update Image</span>
-                </button>
+                {post.sha !== "" && (
+                    <>
+                        <button
+                            onClick={handleUpdateFile}
+                            disabled={isUploading}
+                            className="flex items-center px-2 py-1 text-notion-muted hover:text-notion-text hover:bg-notion-hover rounded-sm text-xs font-medium transition-colors"
+                            title={t('postList.updateFile')}
+                        >
+                            <DocumentIcon className="w-3.5 h-3.5 mr-1" />
+                            <span className="hidden sm:inline">Update File</span>
+                        </button>
+                        <button
+                            onClick={handleUpdateImage}
+                            disabled={isUploading}
+                            className="flex items-center px-2 py-1 text-notion-muted hover:text-notion-text hover:bg-notion-hover rounded-sm text-xs font-medium transition-colors"
+                            title={t('postList.updateImage')}
+                        >
+                            <ImageIcon className="w-3.5 h-3.5 mr-1" />
+                            <span className="hidden sm:inline">Update Image</span>
+                        </button>
 
-                <div className="w-[1px] h-4 bg-notion-border mx-1"></div>
+                        <div className="w-[1px] h-4 bg-notion-border mx-1"></div>
+                    </>
+                )}
 
                 {isDirty && (
                     <button
@@ -955,14 +1060,16 @@ const PostDetailView: React.FC<PostDetailViewProps> = ({ post, onBack, onDelete,
                     </button>
                 )}
                 
-                <button
-                    onClick={() => onDelete(post)}
-                    className="p-1.5 text-notion-muted hover:text-red-600 hover:bg-notion-hover rounded-sm transition-colors flex items-center text-xs font-medium"
-                    title={t('postPreview.delete')}
-                >
-                    <TrashIcon className="w-4 h-4 mr-1" />
-                    <span className="hidden sm:inline">{t('postPreview.delete')}</span>
-                </button>
+                {post.sha !== "" && (
+                    <button
+                        onClick={() => onDelete(post)}
+                        className="p-1.5 text-notion-muted hover:text-red-600 hover:bg-notion-hover rounded-sm transition-colors flex items-center text-xs font-medium"
+                        title={t('postPreview.delete')}
+                    >
+                        <TrashIcon className="w-4 h-4 mr-1" />
+                        <span className="hidden sm:inline">{t('postPreview.delete')}</span>
+                    </button>
+                )}
             </div>
         </div>
       </header>
