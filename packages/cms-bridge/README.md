@@ -1,6 +1,6 @@
 # @pageel/cms
 
-Astro integration for [Pageel CMS](https://pageel.app) — add a `/cms` admin route to your Astro site.
+Astro integration for [Pageel CMS](https://github.com/pageel/pageel-cms) — add a `/cms` admin route to your Astro site.
 
 ## Installation
 
@@ -34,7 +34,7 @@ export default defineConfig({
 
 ```js
 pageelCms({
-  cmsUrl: 'https://cms.pageel.app',  // CMS backend URL
+  cmsUrl: 'https://your-cms-backend.com',  // CMS backend URL
   adminRoute: '/cms',                 // Admin route path
   autoConfig: true,                   // Auto-generate .pageelrc.json
   contentDir: 'src/content',          // Content directory to scan
