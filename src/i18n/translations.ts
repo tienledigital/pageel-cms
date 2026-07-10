@@ -279,6 +279,8 @@ export const translations = {
       error: {
         dirNotFound: 'Directory not found: \'{{path}}\'. Please make sure this directory exists in your repository. You can change the target directory from the Settings tab.',
         setImageDomain: "Image not loaded. Please set your website's main domain in Settings to preview images correctly.",
+        emptyTitle: 'Please enter a title to save the post.',
+        duplicateFile: 'The post title already exists. Please change the title.',
       },
       noPosts: 'No posts found in the selected directory.',
       searchPlaceholder: 'Search by title, author, category, tag...',
@@ -296,6 +298,7 @@ export const translations = {
       },
       deleteConfirm: 'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
       uploadButton: 'Upload Post',
+      createButton: 'Create Post',
       imageSelection: {
         title: 'Update Cover Image',
         tabUpload: 'Upload New',
@@ -835,6 +838,8 @@ export const translations = {
       error: {
         dirNotFound: 'Không tìm thấy thư mục: \'{{path}}\'. Vui lòng đảm bảo thư mục này tồn tại trong kho chứa của bạn. Bạn có thể thay đổi thư mục đích trong tab Cài đặt.',
         setImageDomain: "Không tải được ảnh. Vui lòng đặt tên miền chính của website trong Cài đặt để xem trước ảnh.",
+        emptyTitle: 'Vui lòng nhập tiêu đề bài viết để lưu.',
+        duplicateFile: 'Tên bài viết đã tồn tại trên hệ thống. Vui lòng thay đổi tiêu đề.',
       },
       noPosts: 'Không tìm thấy bài viết nào trong thư mục đã chọn.',
       searchPlaceholder: 'Tìm kiếm theo tiêu đề, tác giả, danh mục, thẻ...',
@@ -852,6 +857,7 @@ export const translations = {
       },
       deleteConfirm: 'Bạn có chắc chắn muốn xóa "{{name}}"? Hành động này không thể hoàn tác.',
       uploadButton: 'Tải Bài viết',
+      createButton: 'Tạo bài viết',
       imageSelection: {
         title: 'Cập nhật Ảnh bìa',
         tabUpload: 'Tải Mới',

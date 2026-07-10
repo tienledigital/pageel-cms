@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { IGitService, GithubRepo, ProjectType } from '../types';
 import { parseMarkdown } from '../utils/parsing';
 import { useI18n } from '../i18n/I18nContext';
@@ -8,6 +8,7 @@ import { SearchIcon } from './icons/SearchIcon';
 import { ViewListIcon } from './icons/ViewListIcon';
 import { ViewGridIcon } from './icons/ViewGridIcon';
 import { UploadIcon } from './icons/UploadIcon';
+import { PlusIcon } from './icons/PlusIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { DocumentIcon } from './icons/DocumentIcon';
 import { ImageIcon } from './icons/ImageIcon';
@@ -159,6 +160,39 @@ const PostList: React.FC<PostListProps> = ({
   const activeTemplate = activeCollection?.template || null;
   const [visibleFields, setVisibleFields] = useState<string[]>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({ '__name__': 35 });
+
+  const handleCreateNewPost = useCallback(() => {
+      const defaultFrontmatter: Record<string, any> = {
+          title: '',
+          date: new Date().toISOString().split('T')[0],
+          tags: []
+      };
+
+      if (activeTemplate?.fields) {
+          activeTemplate.fields.forEach(field => {
+              if (field.name !== 'title' && field.name !== 'date' && field.name !== 'tags') {
+                  let defaultValue: any = "";
+                  if (field.type === 'array') defaultValue = [];
+                  if (field.type === 'boolean') defaultValue = false;
+                  if (field.type === 'number') defaultValue = 0;
+                  defaultFrontmatter[field.name] = defaultValue;
+              }
+          });
+      }
+
+      const mockNewPost: PostData = {
+          name: '',
+          path: '',
+          sha: '',
+          body: '',
+          rawContent: '',
+          frontmatter: defaultFrontmatter,
+          thumbnailUrl: null,
+          html_url: ''
+      };
+
+      setSelectedPost(mockNewPost);
+  }, [activeTemplate]);
 
   useEffect(() => {
     // 1. Prioritize active collection settings
@@ -543,6 +577,14 @@ const PostList: React.FC<PostListProps> = ({
                     <ViewGridIcon className="w-4 h-4" />
                 </button>
             </div>
+
+            <button
+                onClick={handleCreateNewPost}
+                className="flex items-center justify-center px-3 py-1.5 bg-white hover:bg-gray-50 border border-notion-border text-notion-text text-xs font-medium rounded-sm transition-colors shadow-sm"
+            >
+                <PlusIcon className="w-3.5 h-3.5 mr-1.5" />
+                {t('postList.createButton')}
+            </button>
 
             <button
                 onClick={() => uploadPostInputRef.current?.click()}
