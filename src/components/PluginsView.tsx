@@ -99,9 +99,9 @@ export const PluginsView: React.FC<PluginsViewProps> = ({
     setSyncingPluginId(pluginId);
     setToast({ type: 'loading', message: 'Đang đồng bộ cấu hình lên Git...' });
 
-    // 2. Network Request with Timeout (5s)
+    // 2. Network Request with Timeout (15s)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
       const res = await fetch('/api/settings/plugins', {
@@ -161,7 +161,7 @@ export const PluginsView: React.FC<PluginsViewProps> = ({
     setToast({ type: 'loading', message: 'Đang lưu cấu hình plugin...' });
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
       const res = await fetch('/api/settings/plugins', {
