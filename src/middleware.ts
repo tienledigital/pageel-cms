@@ -1,6 +1,7 @@
 /**
  * Middleware: Session guard for /cms and /api/proxy/* routes
  * 
+ * @para-doc [#csa-cms-sec-middleware-guard]
  * Security layers (Defense in Depth):
  * 1. Cookie presence check
  * 2. HMAC signature + expiration verification
@@ -11,6 +12,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { verifySession, resolveGitCredentials, COOKIE_NAME } from './lib/session';
 
+// @para-doc [#csa-cms-sec-middleware-guard-implementation]
 export const onRequest = defineMiddleware(async ({ request, cookies, redirect, url }, next) => {
   const path = url.pathname;
 

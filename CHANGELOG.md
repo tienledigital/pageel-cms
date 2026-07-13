@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.0] - 2026-07-13
+
+### Added
+
+- **Plugins Management System**: Introduced a card-based Plugins View dashboard to manage editor extensions.
+- **Exclusive Activation**: Implemented single-active editor plugin rule where activating one editor plugin automatically deactivates another.
+- **Dynamic Configuration Form**: Created dynamic settings forms generated from plugin JSON Schemas, wrapped in an emergency Error Boundary fallback with manual rollback and force deactivate hooks.
+- **Backend API Sanitization**: Added JSON depth (max 3), payload size limit (50KB), and Prototype Pollution defense filtering (`__proto__`, `constructor`, `prototype` keys) to `/api/settings/plugins`.
+- **Core Bypass Control**: Added automatic `SlotRenderer` fallback rendering a raw textarea if `enablePlugins` settings are disabled globally.
+- **NVM/Node 24 compatibility**: Ensured static type check compilation compatibility.
+
 ## [2.4.0] - 2026-07-10
 
 ### Added
