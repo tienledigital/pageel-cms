@@ -15,6 +15,7 @@ import {
   type ComponentType,
 } from 'react';
 import { resolveSlotComponent } from './registry';
+import { usePluginConfig } from './PluginContext';
 import type { PageelPlugin } from '@pageel/plugin-types';
 
 // ── Error Boundary ──
@@ -111,6 +112,7 @@ interface SlotRendererProps {
   loadingIndicator?: ReactNode;
 }
 
+// @para-doc [#csa-slot-renderer-bypass]
 export function SlotRenderer({
   slot,
   pluginName,
@@ -118,9 +120,11 @@ export function SlotRenderer({
   props,
   loadingIndicator,
 }: SlotRendererProps) {
+  const config = usePluginConfig();
+  const isEnabled = config?.plugins?.enabled;
   const PluginComponent = resolveSlotComponent<Record<string, unknown>>(pluginName, slot);
 
-  if (!PluginComponent) {
+  if (isEnabled === false || !PluginComponent) {
     return <>{fallback}</>;
   }
 
