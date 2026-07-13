@@ -76,10 +76,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isTogglingPlugin, setIsTogglingPlugin] = useState(false);
 
-    const handleWysiwygToggle = async (enabled: boolean) => {
+    // @para-doc [#csa-settings-view-cleanup]
+    const handlePluginsEnabledToggle = async (enabled: boolean) => {
         setIsTogglingPlugin(true);
         try {
-            const payload = { editor: enabled ? '@pageel/plugin-mdx' : null };
+            const payload = { enabled };
             const res = await fetch('/api/settings/plugins', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -96,7 +97,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 console.error('Failed to update plugin config');
             }
         } catch (err) {
-            console.error('Error toggling WYSIWYG', err);
+            console.error('Error toggling plugins system', err);
         } finally {
             setIsTogglingPlugin(false);
         }
@@ -232,15 +233,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {/* --- System Config --- */}
                 <SectionHeader title={t('dashboard.settings.system.title')} icon={<SettingsIcon className="w-4 h-4" />} />
                 <div className="divide-y divide-notion-border border-t border-notion-border">
+                    {/* @para-doc [#csa-settings-view-enable-toggle] */}
                     <SettingRow 
-                        label="WYSIWYG Editor Plugin" 
-                        description="Enable the visual MDX Editor for writing posts. Disable to use standard raw Markdown textarea."
+                        label="Enable Plugins" 
+                        description="Enable the pageel-cms plugin system to support visual editors and custom slot components."
                     >
                         <div className="flex items-center gap-3">
                             {isTogglingPlugin && <SpinnerIcon className="w-4 h-4 animate-spin text-notion-muted" />}
                             <ToggleSwitch 
-                                checked={!!pluginConfig?.plugins?.editor} 
-                                onChange={handleWysiwygToggle} 
+                                checked={!!pluginConfig?.plugins?.enabled} 
+                                onChange={handlePluginsEnabledToggle} 
                             />
                         </div>
                     </SettingRow>

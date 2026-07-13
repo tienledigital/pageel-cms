@@ -10,7 +10,9 @@ import { createContext, useContext, type ReactNode } from 'react';
 // ── Plugin Config Interface ──
 export interface PluginConfig {
   plugins?: {
-    editor?: string;   // "@pageel/plugin-mdx"
+    enabled?: boolean; // Enable/Disable all plugins globally
+    editor?: string;   // "@pageel/plugin-mdx" or "@pageel/plugin-easymde"
+    settings?: any;    // Dynamic settings for active editor plugin
     toolbar?: string;  // future
     preview?: string;  // future
   };

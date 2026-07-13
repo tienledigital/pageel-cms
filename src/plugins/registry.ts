@@ -11,13 +11,50 @@ import type { PageelPlugin } from '@pageel/plugin-types';
 import type { ComponentType } from 'react';
 import { lazy } from 'react';
 
+export interface PluginMetadata {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  type: 'editor';
+  author?: string;
+}
+
+// @para-doc [#csa-plugins-view-metadata]
+export const SUPPORTED_PLUGINS: PluginMetadata[] = [
+  {
+    id: '@pageel/plugin-mdx',
+    name: 'MDX Rich Editor',
+    description: 'WYSIWYG MDX editor supporting visual formatting and custom JSX components.',
+    version: '1.0.0',
+    type: 'editor',
+    author: 'Pageel Team'
+  },
+  {
+    id: '@pageel/plugin-easymde',
+    name: 'EasyMDE Markdown Editor',
+    description: 'Intuitive Markdown editor supporting syntax highlighting, dynamic toolbar formatting, and side-by-side preview.',
+    version: '1.0.0',
+    type: 'editor',
+    author: 'Pageel Team'
+  }
+];
+
 // ── Static Registry ──
 // Mỗi supported plugin = 1 static import entry.
 // Thêm entry khi CMS bundle hỗ trợ thêm plugin mới.
 const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PageelPlugin }>> = {
   '@pageel/plugin-mdx': () => import('@pageel/plugin-mdx'),
-  // Future plugins:
-  // '@pageel/plugin-milkdown': () => import('@pageel/plugin-milkdown'),
+  '@pageel/plugin-easymde': () => Promise.resolve({
+    default: {
+      id: '@pageel/plugin-easymde',
+      name: 'EasyMDE Markdown Editor',
+      version: '1.0.0',
+      slots: {
+        editor: () => null // Mock component temporarily
+      }
+    }
+  } as any),
 };
 
 // ── Plugin Name Validation (Security: S3) ──

@@ -45,6 +45,8 @@ import { TemplateIcon } from "./icons/TemplateIcon";
 import { Sidebar } from "./Sidebar";
 import { SetupWizard } from "./SetupWizard";
 import { SettingsView } from "./SettingsView";
+import { PluginsView } from "./PluginsView";
+import { PuzzleIcon } from "./icons/PuzzleIcon";
 import { SyncStatusBadge } from "./SyncStatusBadge";
 import { ExclamationTriangleIcon } from "./icons/ExclamationTriangleIcon";
 import { NewCollectionModal } from "./NewCollectionModal";
@@ -207,6 +209,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     { id: "images", label: t("dashboard.nav.manageImages"), icon: ImageIcon },
     { id: "template", label: t("dashboard.nav.template"), icon: TemplateIcon },
     { id: "workflows", label: t("dashboard.nav.workflows"), icon: BoardIcon },
+    ...(pluginConfig?.plugins?.enabled ? [{ id: "plugins", label: "Plugins", icon: PuzzleIcon }] : []),
     { id: "backup", label: t("dashboard.nav.backup"), icon: DownloadIcon },
     { id: "settings", label: t("dashboard.nav.settings"), icon: SettingsIcon },
   ];
@@ -217,6 +220,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       images: <ImageIcon className="w-8 h-8 text-notion-text mr-3" />,
       template: <TemplateIcon className="w-8 h-8 text-notion-text mr-3" />,
       workflows: <BoardIcon className="w-8 h-8 text-notion-text mr-3" />,
+      plugins: <PuzzleIcon className="w-8 h-8 text-notion-text mr-3" />,
       backup: <DownloadIcon className="w-8 h-8 text-notion-text mr-3" />,
       settings: <SettingsIcon className="w-8 h-8 text-notion-text mr-3" />,
     };
@@ -229,6 +233,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       images: t("dashboard.nav.manageImages"),
       template: t("dashboard.nav.template"),
       workflows: t("dashboard.nav.workflows"),
+      plugins: "Plugins",
       backup: t("dashboard.nav.backup"),
       settings: t("dashboard.nav.settings"),
     };
@@ -301,6 +306,16 @@ const Dashboard: React.FC<DashboardProps> = ({
             repo={currentRepo}
             postsPath={effectivePostsPath}
             imagesPath={effectiveImagesPath}
+          />
+        );
+      // @para-doc [#csa-plugins-view-route]
+      case "plugins":
+        return (
+          <PluginsView
+            gitService={gitService}
+            repo={currentRepo}
+            pluginConfig={pluginConfig}
+            setPluginConfig={setPluginConfig}
           />
         );
       case "settings":

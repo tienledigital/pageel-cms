@@ -60,10 +60,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const sanitizedPayload = sanitizePayload(payload);
-    const { editor, settings } = sanitizedPayload;
+    const { editor, settings, enabled } = sanitizedPayload;
 
     // Validate allowed editors dynamically
-    if (editor !== null && !isValidPluginName(editor)) {
+    if (editor !== null && editor !== undefined && !isValidPluginName(editor)) {
       return new Response('Invalid editor plugin', { status: 400 });
     }
 
@@ -90,10 +90,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       currentConfig.plugins = {};
     }
     
-    if (editor) {
-      currentConfig.plugins.editor = editor;
-    } else {
-      delete currentConfig.plugins.editor;
+    if (enabled !== undefined) {
+      currentConfig.plugins.enabled = enabled;
+    }
+
+    if (editor !== undefined) {
+      if (editor) {
+        currentConfig.plugins.editor = editor;
+      } else {
+        delete currentConfig.plugins.editor;
+      }
     }
 
     if (settings !== undefined) {
