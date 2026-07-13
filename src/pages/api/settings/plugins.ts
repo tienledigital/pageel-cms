@@ -1,9 +1,39 @@
 import type { APIRoute } from 'astro';
 import { verifySession, resolveGitCredentials, COOKIE_NAME } from '../../../lib/session';
 import { createGitConfig, getFileContent, updateFileContent, createFileFromString, getFileSha } from '../../../lib/git-client';
+import { isValidPluginName } from '../../../plugins/registry';
 
 const PAGEELRC_PATH = '.pageelrc.json';
 
+function sanitizePayload(obj: any): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  const safeObj: any = Array.isArray(obj) ? [] : {};
+  for (const key of Object.keys(obj)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    safeObj[key] = sanitizePayload(obj[key]);
+  }
+  return safeObj;
+}
+
+function getObjectDepth(obj: any): number {
+  if (obj === null || typeof obj !== 'object') {
+    return 0;
+  }
+  let maxDepth = 0;
+  for (const key of Object.keys(obj)) {
+    if (typeof obj[key] === 'object') {
+      maxDepth = Math.max(maxDepth, getObjectDepth(obj[key]));
+    }
+  }
+  return maxDepth + 1;
+}
+
+// @para-doc [#csa-plugins-api-validation]
+// @para-doc [#csa-plugins-api-settings-merge]
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const sessionToken = cookies.get(COOKIE_NAME)?.value;
@@ -16,11 +46,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return new Response('Session expired', { status: 401 });
     }
 
-    const payload = await request.json();
-    const { editor } = payload;
+    // Limit payload size to 50KB
+    const rawBody = await request.text();
+    if (rawBody.length > 50 * 1024) {
+      return new Response('Payload too large', { status: 400 });
+    }
 
-    // Validate allowed editors
-    if (editor !== null && editor !== '@pageel/plugin-mdx') {
+    const payload = JSON.parse(rawBody);
+
+    // Limit payload depth to 3
+    if (getObjectDepth(payload) > 3) {
+      return new Response('Payload depth exceeded', { status: 400 });
+    }
+
+    const sanitizedPayload = sanitizePayload(payload);
+    const { editor, settings } = sanitizedPayload;
+
+    // Validate allowed editors dynamically
+    if (editor !== null && !isValidPluginName(editor)) {
       return new Response('Invalid editor plugin', { status: 400 });
     }
 
@@ -51,6 +94,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       currentConfig.plugins.editor = editor;
     } else {
       delete currentConfig.plugins.editor;
+    }
+
+    if (settings !== undefined) {
+      currentConfig.plugins.settings = settings;
     }
 
     const newContent = JSON.stringify(currentConfig, null, 2);
